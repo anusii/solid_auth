@@ -1,3 +1,7 @@
+### 0.1.23
+
+* Bump intl version
+
 ### 0.1.22
 
 * Url launcher code update for Android authentication

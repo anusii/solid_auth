@@ -1,6 +1,6 @@
 name: solid_auth
 description: Authentication library to connect to a Solid server from solidproject.org
-version: 0.1.22
+version: 0.1.23
 homepage: https://github.com/anusii/solid_auth
 
 environment:
@@ -16,7 +16,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.2
-  intl: ^0.19.0
+  intl: ^0.20.2
   jose: ^0.3.4
   jwt_decoder: ^2.0.1
   logging: ^1.2.0
