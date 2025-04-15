@@ -94,3 +94,40 @@ String dPopToken = genDpopToken(endPointUrl, rsaKeyPair, publicKeyJwk, httpMetho
 ## Additional information
 
 The source code can be accessed via [GitHub repository](https://github.com/anusii/solid_auth). You can also file issues you face at [GitHub Issues](https://github.com/anusii/solid_auth/issues).
+
+### Running Solid Auth in web applications
+
+In order to successfully run `solid auth` in a web application you also need to create a custom `callback.html` file inside the `web` directory. After created simply copy and paste the following code into that file.
+
+```html
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        const AUTH_DESTINATION_KEY = "openidconnect_auth_destination_url";
+        const AUTH_RESPONSE_KEY = "openidconnect_auth_response_info";
+
+        window.onload = function () {
+            if (window.opener && window.opener !== window) { //Used when working as a popup. Uses post message to respond to the parent window                
+                var parent = window.opener ?? window.parent;
+                parent.postMessage(location.href, "*");
+            } else { //Used for redirect loop functionality.                
+                //Get the original page destination                
+                const destination = sessionStorage.getItem(AUTH_DESTINATION_KEY || "/");
+                sessionStorage.removeItem(AUTH_DESTINATION_KEY);
+                //Store the current window location that will be used to get the information for authentication
+                sessionStorage.setItem(AUTH_RESPONSE_KEY, window.location);
+
+                //Redirect to where we're going so that we can restore state completely
+                location.assign(destination);
+            }
+        }
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
+```
