@@ -1,4 +1,7 @@
-part of 'solid_auth.dart';
+import 'dart:async';
+
+/// Package imports:
+import 'package:http/http.dart' as http;
 
 /// Get POD issuer URI
 Future<String> getIssuer(String textUrl) async {

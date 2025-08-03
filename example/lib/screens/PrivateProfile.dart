@@ -14,11 +14,9 @@ import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth_example/models/GetRdfData.dart';
 
 class PrivateProfile extends StatefulWidget {
-  final Map authData; // Authentication data
-  final String webId; // User WebId
+  final SolidAuth solidAuth; // SolidAuth instance
 
-  const PrivateProfile({Key? key, required this.authData, required this.webId})
-      : super(key: key);
+  const PrivateProfile({Key? key, required this.solidAuth}) : super(key: key);
 
   @override
   State<PrivateProfile> createState() => _PrivateProfileState();
@@ -77,8 +75,7 @@ class _PrivateProfileState extends State<PrivateProfile> {
     );
   }
 
-  Widget _loadedScreen(
-      Object profInfo, String webId, String logoutUrl, Map authData) {
+  Widget _loadedScreen(Object profInfo, String webId, SolidAuth solidAuth) {
     // Read profile info from the turtle file
     PodProfile podProfile = PodProfile(profInfo.toString());
 
@@ -122,7 +119,7 @@ class _PrivateProfileState extends State<PrivateProfile> {
       color: Colors.white,
       child: Column(
         children: [
-          Header(mainDrawer: _scaffoldKey, logoutUrl: logoutUrl),
+          Header(mainDrawer: _scaffoldKey, solidAuth: solidAuth),
           Divider(thickness: 1),
           Expanded(
             child: SingleChildScrollView(
@@ -131,8 +128,7 @@ class _PrivateProfileState extends State<PrivateProfile> {
                 child: ProfileInfo(
                     profData: profData,
                     profType: 'private',
-                    webId: webId,
-                    authData: authData)),
+                    solidAuth: solidAuth)),
           )
         ],
       ),
@@ -141,21 +137,10 @@ class _PrivateProfileState extends State<PrivateProfile> {
 
   @override
   Widget build(BuildContext context) {
-    Map authData = widget.authData;
-    String webId = widget.webId;
-    String logoutUrl = authData['logoutUrl'];
-
-    var rsaInfo = authData['rsaInfo'];
-    var rsaKeyPair = rsaInfo['rsa'];
-    var publicKeyJwk = rsaInfo['pubKeyJwk'];
-
-    String accessToken = authData['accessToken'];
-    //Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken);
-
     // Get profile
+    String webId = widget.solidAuth.currentWebId!;
     String profCardUrl = webId.replaceAll('#me', '');
-    String dPopToken =
-        genDpopToken(profCardUrl, rsaKeyPair, publicKeyJwk, 'GET');
+    final dPopToken = widget.solidAuth.genDpopToken(profCardUrl, 'GET');
 
     return Scaffold(
       key: _scaffoldKey,
@@ -169,13 +154,13 @@ class _PrivateProfileState extends State<PrivateProfile> {
       // ),
       body: SafeArea(
         child: FutureBuilder(
-            future:
-                rest_api.fetchPrvProfile(profCardUrl, accessToken, dPopToken),
+            future: rest_api.fetchPrvProfile(
+                profCardUrl, dPopToken.accessToken, dPopToken.dpopToken),
             builder: (context, snapshot) {
               Widget returnVal;
               if (snapshot.connectionState == ConnectionState.done) {
                 returnVal =
-                    _loadedScreen(snapshot.data!, webId, logoutUrl, authData);
+                    _loadedScreen(snapshot.data!, webId, widget.solidAuth);
               } else {
                 returnVal = _loadingScreen();
               }

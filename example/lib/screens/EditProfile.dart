@@ -9,17 +9,15 @@ import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth_example/models/Constants.dart';
 import 'package:solid_auth_example/components/Header.dart';
 import 'package:solid_auth_example/models/SolidApi.dart';
-import 'package:solid_auth_example/screens/PrivateScreen.dart';
 
 class EditProfile extends StatefulWidget {
-  final Map authData;
-  final String webId;
   final Map profData;
+  final SolidAuth solidAuth;
+
   const EditProfile({
     Key? key,
-    required this.authData,
-    required this.webId,
     required this.profData,
+    required this.solidAuth,
   }) : super(key: key);
 
   @override
@@ -46,14 +44,12 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   Widget build(BuildContext context) {
-    String logoutUrl = widget.authData['logoutUrl'];
-
     return Scaffold(
       key: _scaffoldKey,
       body: SafeArea(
         child: Column(
           children: [
-            Header(mainDrawer: _scaffoldKey, logoutUrl: logoutUrl),
+            Header(mainDrawer: _scaffoldKey, solidAuth: widget.solidAuth),
             Divider(thickness: 1),
             Expanded(
               child: SingleChildScrollView(
@@ -98,14 +94,7 @@ class _EditProfileState extends State<EditProfile> {
                             children: [
                               OutlinedButton(
                                   onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => PrivateScreen(
-                                                authData: widget.authData,
-                                                webId: widget.webId,
-                                              )),
-                                    );
+                                    Navigator.pop(context);
                                   },
                                   style: OutlinedButton.styleFrom(
                                       padding:
@@ -128,26 +117,11 @@ class _EditProfileState extends State<EditProfile> {
                               ),
                               ElevatedButton(
                                   onPressed: () async {
-                                    var rsaInfo = widget.authData['rsaInfo'];
-
-                                    // Get access token
-                                    String accessToken =
-                                        widget.authData['accessToken'];
-                                    // Map<String, dynamic> decodedToken =
-                                    //     JwtDecoder.decode(accessToken);
-
-                                    // Get RSA public/private key pair
-                                    var rsaKeyPair = rsaInfo['rsa'];
-                                    var publicKeyJwk = rsaInfo['pubKeyJwk'];
-
                                     // Get profile URI
+                                    final webId =
+                                        widget.solidAuth.currentWebId!;
                                     String profCardUrl =
-                                        widget.webId.replaceAll('#me', '');
-
-                                    // Generate DPoP token
-                                    String dPopToken = genDpopToken(profCardUrl,
-                                        rsaKeyPair, publicKeyJwk, 'PATCH');
-                                    ;
+                                        webId.replaceAll('#me', '');
 
                                     List attrList = [
                                       'name',
@@ -210,7 +184,7 @@ class _EditProfileState extends State<EditProfile> {
                                         if (attr == 'dob') {
                                           updateQuery = genSparqlQuery(
                                               'UPDATE_DATE',
-                                              widget.webId,
+                                              webId,
                                               'http://www.w3.org/2006/vcard/ns#' +
                                                   predicateMap[attr],
                                               newVal,
@@ -220,7 +194,7 @@ class _EditProfileState extends State<EditProfile> {
                                         } else {
                                           updateQuery = genSparqlQuery(
                                               'UPDATE',
-                                              widget.webId,
+                                              webId,
                                               'http://www.w3.org/2006/vcard/ns#' +
                                                   predicateMap[attr],
                                               newVal,
@@ -229,11 +203,8 @@ class _EditProfileState extends State<EditProfile> {
 
                                         // Update profile using the generated query
                                         String updateResponse =
-                                            await updateProfile(
-                                                profCardUrl,
-                                                accessToken,
-                                                dPopToken,
-                                                updateQuery);
+                                            await updateProfile(profCardUrl,
+                                                widget.solidAuth, updateQuery);
                                         numOfUpdates += 1;
                                         assert(updateResponse != '');
                                       }
@@ -243,14 +214,7 @@ class _EditProfileState extends State<EditProfile> {
                                         'Number of updates conducted: $numOfUpdates'); // Print number of updates conducted
 
                                     // Going back to profile page
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => PrivateScreen(
-                                                authData: widget.authData,
-                                                webId: widget.webId,
-                                              )),
-                                    );
+                                    Navigator.pop(context);
                                   },
                                   style: ElevatedButton.styleFrom(
                                       foregroundColor: darkGold,
