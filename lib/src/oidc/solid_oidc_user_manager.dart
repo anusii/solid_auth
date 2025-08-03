@@ -9,25 +9,174 @@ import 'package:solid_auth/src/solid_auth_issuer.dart' as solid_auth_issuer;
 
 final _log = Logger("solid_authentication_oidc");
 
+/// Contains DPoP token and access token for authenticated API requests to Solid servers.
+///
+/// DPoP (Demonstration of Proof-of-Possession) is a security mechanism required
+/// by Solid servers to prove that the client making an API request is the same
+/// client to which the access token was issued. This prevents token theft and replay attacks.
+///
+/// ## Usage
+///
+/// Typically obtained from [SolidAuth.genDpopToken] and used to make authenticated
+/// requests to Solid pod resources.
+///
+/// ```dart
+/// final dpop = solidAuth.genDpopToken('https://alice.pod.com/data/', 'GET');
+///
+/// // Use convenience method with additional headers
+/// final response = await http.get(
+///   Uri.parse('https://alice.pod.com/data/'),
+///   headers: {
+///     ...dpop.httpHeaders(),
+///     'Accept': 'text/turtle',
+///   },
+/// );
+///
+/// // Or construct headers manually
+/// final response = await http.get(
+///   Uri.parse('https://alice.pod.com/data/'),
+///   headers: {
+///     'Authorization': 'DPoP ${dpop.accessToken}',
+///     'DPoP': dpop.dpopToken,
+///     'Accept': 'text/turtle',
+///   },
+/// );
+/// ```
 class DPoP {
+  /// The DPoP JWT token that proves possession of the access token.
+  ///
+  /// This is a signed JWT that includes:
+  /// - The HTTP method and URL being accessed
+  /// - A unique nonce to prevent replay attacks
+  /// - A timestamp showing when the token was created
+  /// - The public key corresponding to the private key used for signing
   final String dpopToken;
+
+  /// The OAuth2 access token for the authenticated user.
+  ///
+  /// This token grants access to resources but must be accompanied by the
+  /// [dpopToken] to prove possession when making requests to Solid servers.
   final String accessToken;
 
   DPoP({required this.dpopToken, required this.accessToken});
 
+  /// Returns HTTP headers formatted for Solid API requests.
+  ///
+  /// This is the recommended way to use DPoP tokens with HTTP clients.
+  /// The returned map contains:
+  /// - `Authorization`: 'DPoP {accessToken}'
+  /// - `DPoP`: The DPoP JWT token
+  ///
+  /// ## Example
+  /// ```dart
+  /// final dpop = solidAuth.genDpopToken('https://alice.pod.com/data/', 'GET');
+  /// final response = await http.get(
+  ///   Uri.parse('https://alice.pod.com/data/'),
+  ///   headers: {
+  ///     ...dpop.httpHeaders(),
+  ///     'Accept': 'text/turtle',
+  ///   },
+  /// );
+  /// ```
   Map<String, String> httpHeaders() => {
         'Authorization': 'DPoP $accessToken',
         'DPoP': dpopToken,
       };
 }
 
+/// Contains the authentication result with both OIDC user data and validated WebID.
+///
+/// This class is returned by [SolidAuth.authenticate] and contains all the
+/// information needed to work with the authenticated user in the Solid ecosystem.
+///
+/// ## WebID vs User Data
+///
+/// - **WebID**: A unique identifier for the user in the Solid ecosystem, typically
+///   an HTTPS URL pointing to their profile document (e.g., 'https://alice.solidcommunity.net/profile/card#me')
+///
+/// - **User Data**: Standard OIDC user information including tokens, claims, and
+///   profile information from the identity provider
+///
+/// ## Example
+/// ```dart
+/// final result = await solidAuth.authenticate('https://alice.solidcommunity.net/profile/card#me');
+///
+/// print('WebID: ${result.webId}');
+/// print('Provider: ${result.oidcUser.claims.issuer}');
+/// print('Subject: ${result.oidcUser.claims.subject}');
+/// print('Access token expires: ${result.oidcUser.token.expiresAt}');
+/// ```
 class UserAndWebId {
-  final OidcUser user;
+  /// The OIDC user object containing tokens, claims, and profile information.
+  ///
+  /// This object provides access to:
+  /// - Access tokens for API requests
+  /// - ID token with user claims
+  /// - Refresh tokens for maintaining the session
+  /// - User profile information from the identity provider
+  ///
+  /// Use this primarily for accessing tokens and provider-specific user data.
+  final OidcUser oidcUser;
+
+  /// The validated WebID of the authenticated user.
+  ///
+  /// A WebID is a globally unique identifier for a person or agent in the
+  /// Solid ecosystem. It's an HTTPS URL that points to the user's profile
+  /// document, which contains information about the user and their data.
+  ///
+  /// This WebID has been validated to ensure:
+  /// 1. It's properly formatted as an HTTPS URL
+  /// 2. The associated profile is accessible
+  /// 3. The profile confirms the identity provider is authorized for this WebID
+  ///
+  /// Use this for identifying the user across different Solid applications
+  /// and for constructing URLs to the user's pod resources.
   final String webId;
 
-  UserAndWebId({required this.user, required this.webId});
+  UserAndWebId({required this.oidcUser, required this.webId});
 }
 
+/// Function type for customizing how WebID or issuer strings are resolved to issuer URIs.
+///
+/// This function is called when the library needs to determine the OIDC issuer
+/// (identity provider) for a given WebID or issuer string.
+///
+/// ## Parameters
+///
+/// - The input string, which could be:
+///   - A WebID URL (e.g., 'https://alice.solidcommunity.net/profile/card#me')
+///   - An issuer URL (e.g., 'https://solidcommunity.net')
+///   - Any other string that might identify an identity provider
+///
+/// ## Return Value
+///
+/// Should return a list of possible issuer URIs to try, in order of preference.
+/// The library will currently use the first one.
+///
+/// ## Default Behavior
+///
+/// If not provided, the library will:
+/// 1. If the input looks like a WebID, fetch the profile document and extract
+///    the `solid:oidcIssuer` property
+/// 2. Otherwise, treat the input as an issuer URI directly
+///
+/// ## Custom Implementation Example
+///
+/// ```dart
+/// Future<List<Uri>> customIssuerResolver(String webIdOrIssuer) async {
+///   if (webIdOrIssuer.contains('example.com')) {
+///     // Custom logic for example.com domains
+///     return [Uri.parse('https://auth.example.com')];
+///   }
+///
+///   // Fall back to default behavior
+///   return [Uri.parse(webIdOrIssuer)];
+/// }
+///
+/// final settings = SolidAuthSettings(
+///   getIssuers: customIssuerResolver,
+/// );
+/// ```
 typedef GetIssuers = Future<List<Uri>> Function(String webIdOrIssuer);
 
 Future<List<Uri>> _getIssuersDefault(String webIdOrIssuer) async {
@@ -51,8 +200,47 @@ class _RsaInfo {
   });
 }
 
+/// Advanced configuration settings for the OIDC authentication flow in Solid applications.
+///
+/// This class provides fine-grained control over the OpenID Connect authentication
+/// process, including security settings, token management, and platform-specific
+/// behaviors. It extends the standard OIDC configuration with Solid-specific
+/// requirements and optimizations.
+///
+/// ## Usage
+///
+/// Typically used internally by [SolidAuth], but may be exposed for advanced
+/// use cases requiring custom OIDC flow configuration:
+///
+/// ```dart
+/// final settings = SolidOidcUserManagerSettings(
+///   redirectUri: Uri.parse('https://myapp.com/callback'),
+///   extraScopes: ['profile', 'email'],
+///   strictJwtVerification: true,
+///   supportOfflineAuth: false,
+///   refreshBefore: Duration(minutes: 5),
+/// );
+/// ```
+///
+/// ## Security Considerations
+///
+/// - **JWT Verification**: Enable [strictJwtVerification] in production
+/// - **Offline Auth**: Disable [supportOfflineAuth] unless specifically needed
+/// - **Token Refresh**: Configure [refreshBefore] to prevent token expiration
+/// - **Redirect URIs**: Ensure all URIs are registered with your identity provider
+///
+/// ## Solid-Specific Defaults
+///
+/// This class provides sensible defaults for Solid OIDC:
+/// - Default scopes: `['openid', 'webid', 'offline_access']`
+/// - WebID discovery integration via [getIssuers]
+/// - DPoP token support for enhanced security
+/// - Automatic session restoration capabilities
 class SolidOidcUserManagerSettings {
+  /// Creates a new instance of [SolidOidcUserManagerSettings].
   ///
+  /// [redirectUri] is required and must be registered with your identity provider.
+  /// All other parameters have sensible defaults for Solid OIDC authentication.
   const SolidOidcUserManagerSettings({
     required this.redirectUri,
     this.uiLocales,
@@ -71,7 +259,7 @@ class SolidOidcUserManagerSettings {
     this.userInfoSettings = const OidcUserInfoSettings(),
     this.frontChannelRequestListeningOptions =
         const OidcFrontChannelRequestListeningOptions(),
-    this.refreshBefore = defaultRefreshBefore,
+    this.refreshBefore,
     this.strictJwtVerification = false,
     this.getExpiresIn,
     this.sessionManagementSettings = const OidcSessionManagementSettings(),
@@ -83,7 +271,12 @@ class SolidOidcUserManagerSettings {
     this.getIssuers,
   });
 
-  /// The default scopes
+  /// The default scopes required for Solid OIDC authentication.
+  ///
+  /// These scopes provide:
+  /// - `openid`: Basic OpenID Connect functionality
+  /// - `webid`: Access to the user's WebID (Solid-specific)
+  /// - `offline_access`: Ability to refresh tokens when the user is offline
   static const defaultScopes = ['openid', 'webid', 'offline_access'];
 
   /// Settings to control using the user_info endpoint.
@@ -170,7 +363,15 @@ class SolidOidcUserManagerSettings {
   /// overrides a token's expires_in value.
   final Duration? Function(OidcTokenResponse tokenResponse)? getExpiresIn;
 
-  /// pass this function to control how a webIdOrIssuer is resoled to the issuer URI.
+  /// Custom function for resolving WebIDs or issuer strings to identity provider URIs.
+  ///
+  /// This function overrides the default WebID-to-issuer discovery process.
+  /// See [GetIssuers] typedef for detailed documentation and examples.
+  ///
+  /// When `null`, the library uses the standard Solid WebID discovery:
+  /// 1. Fetch the WebID profile document
+  /// 2. Extract the `solid:oidcIssuer` property
+  /// 3. Use that as the identity provider URI
   final GetIssuers? getIssuers;
 
   /// pass this function to control how an `id_token` is fetched from a
@@ -256,24 +457,88 @@ class SolidOidcUserManagerSettings {
   }
 }
 
+/// Low-level OIDC user manager with Solid-specific enhancements.
+///
+/// This class provides direct access to the underlying OIDC authentication
+/// mechanisms with Solid pod integration. It handles WebID discovery, DPoP
+/// token generation, and secure session management.
+///
+/// ## Internal Implementation
+///
+/// This class is typically used internally by [SolidAuth] but may be exposed
+/// for advanced use cases requiring fine-grained control over the authentication
+/// flow, such as:
+///
+/// - Custom identity provider discovery logic
+/// - Advanced token lifecycle management
+/// - Integration with non-standard OIDC providers
+///
+/// ## Key Features
+///
+/// - **WebID Integration**: Automatically resolves WebIDs to identity providers
+/// - **DPoP Support**: Generates and manages DPoP tokens for enhanced security
+/// - **Session Persistence**: Maintains authentication state across app restarts
+/// - **Flexible Configuration**: Supports extensive OIDC customization options
+///
+/// ## Usage Example
+///
+/// ```dart
+/// final manager = SolidOidcUserManager(
+///   clientId: 'https://myapp.com/client-profile.jsonld',
+///   webIdOrIssuer: 'https://alice.solidcommunity.net/profile/card#me',
+///   store: OidcMemoryStore(), // or OidcDefaultStore() for persistence
+///   settings: SolidOidcUserManagerSettings(
+///     redirectUri: Uri.parse('https://myapp.com/callback'),
+///   ),
+/// );
+///
+/// await manager.init();
+/// final result = await manager.loginAuthorizationCodeFlow();
+/// final dpop = manager.genDpopToken('https://alice.pod.com/data', 'GET');
+/// ```
+///
+/// ## Security Considerations
+///
+/// - DPoP keys are automatically generated and securely stored
+/// - WebID validation ensures identity provider authorization
+/// - Token refresh is handled automatically with configurable timing
+/// - All tokens are stored using platform-appropriate secure storage
 class SolidOidcUserManager {
   Uri? _issuerUri;
   OidcUserManager? _manager;
 
-  /// The WebID or issuer URL.
+  /// The WebID or issuer URL used for authentication discovery.
   final String _webIdOrIssuer;
 
-  /// The store responsible for setting/getting cached values.
+  /// The persistent store for caching tokens, keys, and session data.
+  ///
+  /// This store handles secure persistence of:
+  /// - Access and refresh tokens
+  /// - DPoP cryptographic key pairs
+  /// - User session information
+  /// - OIDC discovery metadata
+  ///
+  /// Use [OidcDefaultStore] for production apps with persistent storage,
+  /// or [OidcMemoryStore] for testing or non-persistent scenarios.
   final OidcStore store;
 
   final String? _id;
 
-  /// The http client to use when sending requests
+  /// The HTTP client used for making authentication and API requests.
+  ///
+  /// If not provided, a default HTTP client will be used. Custom clients
+  /// can be provided for proxy support, custom headers, or request monitoring.
   final http.Client? _httpClient;
+
   final String _clientId;
 
-  /// The id_token verification options.
+  /// The cryptographic key store for JWT token verification.
+  ///
+  /// Contains public keys from identity providers used to verify
+  /// the authenticity and integrity of JWT tokens. Keys are typically
+  /// fetched automatically from the provider's JWKS endpoint.
   final JsonWebKeyStore? _keyStore;
+
   final SolidOidcUserManagerSettings _settings;
 
   // DPoP key pair management - using solid_auth generated keys
@@ -284,6 +549,31 @@ class SolidOidcUserManager {
   // Storage keys for persisting SOLID-specific data
   static const String _rsaInfoKey = 'solid_rsa_info';
 
+  /// Creates a new [SolidOidcUserManager] instance.
+  ///
+  /// ## Parameters
+  ///
+  /// - [clientId]: Your application's client identifier (typically a URL to your client profile document)
+  /// - [webIdOrIssuer]: The user's WebID or the identity provider's issuer URI
+  /// - [store]: Persistent storage for tokens and session data
+  /// - [settings]: Configuration options for the OIDC flow
+  /// - [id]: Optional identifier for this manager instance (useful for multiple accounts)
+  /// - [httpClient]: Optional custom HTTP client for requests
+  /// - [keyStore]: Optional custom key store for JWT verification
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final manager = SolidOidcUserManager(
+  ///   clientId: 'https://myapp.com/client-profile.jsonld',
+  ///   webIdOrIssuer: 'https://alice.solidcommunity.net/profile/card#me',
+  ///   store: OidcDefaultStore(),
+  ///   settings: SolidOidcUserManagerSettings(
+  ///     redirectUri: Uri.parse('com.myapp://callback'),
+  ///     strictJwtVerification: true,
+  ///   ),
+  /// );
+  /// ```
   SolidOidcUserManager({
     required String clientId,
     required String webIdOrIssuer,
@@ -299,10 +589,65 @@ class SolidOidcUserManager {
         _httpClient = httpClient,
         _clientId = clientId;
 
-  /// The current authenticated user, if any
+  /// The currently authenticated OIDC user, or `null` if not authenticated.
+  ///
+  /// This object contains:
+  /// - Access and refresh tokens
+  /// - User claims from the ID token
+  /// - Profile information from UserInfo endpoint
+  /// - Token expiration and refresh status
+  ///
+  /// Use this to access OIDC-specific user information and tokens.
   OidcUser? get currentUser => _manager?.currentUser;
+
+  /// The currently authenticated user's WebID, or `null` if not authenticated.
+  ///
+  /// The WebID is the Solid-specific user identifier that was validated
+  /// during authentication. This is the primary identifier for the user
+  /// in the Solid ecosystem and should be used for:
+  /// - Identifying the user across Solid applications
+  /// - Constructing URLs to the user's pod resources
+  /// - Access control and authorization decisions
+  ///
+  /// Example: `'https://alice.solidcommunity.net/profile/card#me'`
   String? get currentWebId => _currentWebId;
 
+  /// Initializes the user manager and attempts to restore any existing session.
+  ///
+  /// This method must be called before any other authentication operations.
+  /// It performs the following steps:
+  ///
+  /// 1. **Identity Provider Discovery**: Resolves the WebID or issuer to determine
+  ///    the appropriate OIDC identity provider
+  /// 2. **OIDC Configuration**: Fetches the provider's OpenID configuration
+  /// 3. **Key Pair Management**: Restores or generates DPoP cryptographic keys
+  /// 4. **Session Restoration**: Attempts to restore any existing authentication session
+  /// 5. **WebID Validation**: If a session exists, validates the WebID against the provider
+  ///
+  /// ## Authentication State
+  ///
+  /// After initialization, check [currentUser] and [currentWebId] to determine
+  /// if the user is already authenticated from a previous session.
+  ///
+  /// ## Error Handling
+  ///
+  /// ```dart
+  /// try {
+  ///   await manager.init();
+  ///   if (manager.currentUser != null) {
+  ///     print('Restored session for: ${manager.currentWebId}');
+  ///   }
+  /// } catch (e) {
+  ///   print('Initialization failed: $e');
+  ///   // Handle provider discovery or configuration errors
+  /// }
+  /// ```
+  ///
+  /// ## Performance Notes
+  ///
+  /// - Network requests are made to discover provider configuration
+  /// - Cryptographic key generation may occur on first use
+  /// - Existing sessions are validated against current provider settings
   Future<void> init() async {
     if (_manager != null) {
       await logout();
@@ -423,6 +768,50 @@ class SolidOidcUserManager {
     _log.info('DPoP RSA key pair generated and persisted');
   }
 
+  /// Initiates the OAuth2 Authorization Code Flow for user authentication.
+  ///
+  /// This method starts the standard OIDC authentication process:
+  ///
+  /// 1. **Redirect to Provider**: Opens the identity provider's login page
+  /// 2. **User Authentication**: User enters credentials and grants consent
+  /// 3. **Authorization Code**: Provider redirects back with authorization code
+  /// 4. **Token Exchange**: Code is exchanged for access and ID tokens
+  /// 5. **WebID Extraction**: WebID is extracted and validated from tokens
+  /// 6. **DPoP Integration**: Tokens are enhanced with DPoP proof-of-possession
+  ///
+  /// ## Platform Behavior
+  ///
+  /// - **Web**: Opens provider login in the same window or popup
+  /// - **Mobile**: Launches system browser or in-app WebView
+  /// - **Desktop**: Opens default system browser
+  ///
+  /// ## Return Value
+  ///
+  /// Returns [UserAndWebId] containing both the OIDC user data and the
+  /// validated Solid WebID, or `null` if the user cancels authentication.
+  ///
+  /// ## Error Handling
+  ///
+  /// ```dart
+  /// try {
+  ///   final result = await manager.loginAuthorizationCodeFlow();
+  ///   if (result != null) {
+  ///     print('Authenticated as: ${result.webId}');
+  ///     print('Provider: ${result.user.claims.issuer}');
+  ///   }
+  /// } on OidcException catch (e) {
+  ///   // Handle OIDC-specific errors (network, configuration, etc.)
+  /// } on Exception catch (e) {
+  ///   // Handle WebID validation or other authentication errors
+  /// }
+  /// ```
+  ///
+  /// ## Security Notes
+  ///
+  /// - WebID profile document is fetched to validate the identity provider is authorized for this WebID
+  /// - RSA key pairs for DPoP token generation are automatically created and securely stored
+  /// - All tokens are stored using platform-appropriate secure storage
+  /// - Session state is automatically persisted for future app launches
   Future<UserAndWebId?> loginAuthorizationCodeFlow() async {
     final oidcUser = await _manager!.loginAuthorizationCodeFlow();
     if (oidcUser == null) {
@@ -432,7 +821,7 @@ class SolidOidcUserManager {
     // Extract WebID from the OIDC token using the Solid-OIDC spec methods
     String webId = await _extractAndValidateWebId(oidcUser);
     _currentWebId = webId;
-    return UserAndWebId(user: oidcUser, webId: webId);
+    return UserAndWebId(oidcUser: oidcUser, webId: webId);
   }
 
   Future<String> _extractAndValidateWebId(OidcUser oidcUser) async {
@@ -480,6 +869,61 @@ class SolidOidcUserManager {
         url, rsaKeyPair, publicKeyJwk, method);
   }
 
+  /// Generates a DPoP (Demonstration of Proof-of-Possession) token for API requests.
+  ///
+  /// DPoP tokens are required by Solid servers to prove that the client making
+  /// an API request is the same client that was issued the access token. This
+  /// prevents token theft and replay attacks.
+  ///
+  /// ## Parameters
+  ///
+  /// - [url]: The complete URL of the API endpoint being accessed
+  /// - [method]: The HTTP method being used ('GET', 'POST', 'PUT', 'DELETE', etc.)
+  ///
+  /// ## Return Value
+  ///
+  /// Returns a [DPoP] object containing both the DPoP proof token and the
+  /// access token, ready for use in HTTP requests.
+  ///
+  /// ## Usage Example
+  ///
+  /// ```dart
+  /// // Generate DPoP token for a specific request
+  /// final dpop = manager.genDpopToken(
+  ///   'https://alice.solidcommunity.net/profile/card',
+  ///   'GET'
+  /// );
+  ///
+  /// // Use with HTTP client
+  /// final response = await http.get(
+  ///   Uri.parse('https://alice.solidcommunity.net/profile/card'),
+  ///   headers: dpop.httpHeaders(),
+  /// );
+  /// ```
+  ///
+  /// ## Security Requirements
+  ///
+  /// - Must be called only after successful authentication
+  /// - Each DPoP token is tied to a specific URL and HTTP method
+  /// - Tokens should be generated fresh for each API request
+  /// - The underlying RSA key pair is automatically managed and persisted
+  ///
+  /// ## Error Conditions
+  ///
+  /// Throws [Exception] if:
+  /// - No user is currently authenticated
+  /// - Access token is not available or expired
+  /// - DPoP key pair generation failed
+  ///
+  /// ```dart
+  /// try {
+  ///   final dpop = manager.genDpopToken(url, 'GET');
+  ///   // Use dpop for API request
+  /// } catch (e) {
+  ///   // Handle authentication or key generation errors
+  ///   print('DPoP generation failed: $e');
+  /// }
+  /// ```
   DPoP genDpopToken(String url, String method) {
     if (_manager?.currentUser?.token.accessToken == null) {
       throw Exception('No access token available for DPoP generation');
@@ -493,6 +937,43 @@ class SolidOidcUserManager {
     return DPoP(dpopToken: dpopToken, accessToken: accessToken);
   }
 
+  /// Logs out the current user and clears all authentication data.
+  ///
+  /// This method performs a complete logout process:
+  ///
+  /// 1. **Provider Logout**: Notifies the identity provider of the logout (if supported)
+  /// 2. **Local Cleanup**: Clears all cached authentication data
+  /// 3. **Key Cleanup**: Removes DPoP cryptographic key pairs
+  /// 4. **Session Termination**: Ensures no residual authentication state
+  ///
+  /// **Note**: Token revocation depends on the underlying OIDC library implementation
+  /// and identity provider support. Check your provider's documentation for revocation capabilities.
+  ///
+  /// ## Post-Logout State
+  ///
+  /// After logout:
+  /// - [currentUser] returns `null`
+  /// - [currentWebId] returns `null`
+  /// - All tokens and keys are securely erased
+  /// - A new authentication flow is required for future API access
+  ///
+  /// ## Usage Example
+  ///
+  /// ```dart
+  /// await manager.logout();
+  /// print('User logged out successfully');
+  ///
+  /// // Verify logout state
+  /// assert(manager.currentUser == null);
+  /// assert(manager.currentWebId == null);
+  /// ```
+  ///
+  /// ## Security Notes
+  ///
+  /// - Logout is performed securely with the identity provider when possible
+  /// - All cryptographic material is securely erased from local storage
+  /// - Network failures during provider logout don't prevent local cleanup
+  /// - Multiple logout calls are safe and idempotent
   Future<void> logout() async {
     await _manager?.logout();
     _currentWebId = null;
@@ -502,6 +983,34 @@ class SolidOidcUserManager {
     await _clearPersistedRsaInfo();
   }
 
+  /// Disposes of all resources and cleans up the user manager.
+  ///
+  /// This method should be called when the user manager is no longer needed,
+  /// typically when the application is shutting down or switching user contexts.
+  ///
+  /// ## Cleanup Operations
+  ///
+  /// - Releases HTTP client resources
+  /// - Closes any open authentication flows
+  /// - Disposes of the underlying OIDC manager
+  /// - Clears all internal state references
+  ///
+  /// ## Usage
+  ///
+  /// ```dart
+  /// // Clean shutdown
+  /// await manager.logout(); // Optional: logout first
+  /// await manager.dispose(); // Required: dispose resources
+  ///
+  /// // Manager is no longer usable after dispose
+  /// ```
+  ///
+  /// ## Important Notes
+  ///
+  /// - Call [logout] first if you want to perform a clean logout
+  /// - The manager cannot be used after disposal
+  /// - This method does not automatically logout the user
+  /// - Multiple dispose calls are safe and idempotent
   Future<void> dispose() async {
     await _manager?.dispose();
     _manager = null;

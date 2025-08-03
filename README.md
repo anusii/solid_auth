@@ -131,3 +131,15 @@ In order to successfully run `solid auth` in a web application you also need to 
 
 </html>
 ```
+
+## Roadmap
+
+### Offline-First Support
+Currently, `solid_auth` requires network connectivity during initialization to:
+- Discover identity providers from WebID profiles
+- Fetch OIDC provider configurations
+- Validate authentication sessions
+
+**Future Goal**: Enable fully offline-first applications that can start and function without network connectivity, using cached authentication data and provider configurations.
+
+This is essential for truly offline-capable Solid applications, but requires careful consideration of security trade-offs and cache management strategies.
