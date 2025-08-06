@@ -265,7 +265,6 @@ class _RsaInfo {
 /// ```dart
 /// final settings = SolidOidcUserManagerSettings(
 ///   redirectUri: Uri.parse('https://myapp.com/callback'),
-///   strictJwtVerification: true,
 ///   supportOfflineAuth: false,
 ///   refreshBefore: Duration(minutes: 5),
 /// );
@@ -273,7 +272,7 @@ class _RsaInfo {
 ///
 /// ## Security Considerations
 ///
-/// - **JWT Verification**: Enable [strictJwtVerification] in production
+/// - **JWT Verification**: [strictJwtVerification] is enabled by default for security
 /// - **Offline Auth**: Disable [supportOfflineAuth] unless specifically needed
 /// - **Token Refresh**: Configure [refreshBefore] to prevent token expiration
 /// - **Redirect URIs**: Ensure all URIs are registered with your identity provider
@@ -334,7 +333,7 @@ class SolidOidcUserManagerSettings {
     this.frontChannelRequestListeningOptions =
         const OidcFrontChannelRequestListeningOptions(),
     this.refreshBefore = defaultRefreshBefore,
-    this.strictJwtVerification = false,
+    this.strictJwtVerification = true,
     this.getExpiresIn,
     this.sessionManagementSettings = const OidcSessionManagementSettings(),
     this.getIdToken,
@@ -391,6 +390,9 @@ class SolidOidcUserManagerSettings {
   /// whether JWTs are strictly verified.
   ///
   /// If set to true, the library will throw an exception if a JWT is invalid.
+  ///
+  /// **Security Note**: This defaults to `true` for security. Only set to `false`
+  /// for development/testing or when working with non-compliant OIDC providers.
   final bool strictJwtVerification;
 
   /// Whether to support offline authentication or not.
