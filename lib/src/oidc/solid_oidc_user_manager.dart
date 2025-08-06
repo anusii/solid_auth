@@ -866,7 +866,9 @@ class SolidOidcUserManager {
           request.tokenEndpoint.toString(),
           "POST",
         );
-
+        if (request.headers == null) {
+          request.headers = {};
+        }
         request.headers!['DPoP'] = dPopToken;
         return Future.value(request);
       },
