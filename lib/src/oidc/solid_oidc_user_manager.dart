@@ -179,6 +179,56 @@ class UserAndWebId {
 /// ```
 typedef GetIssuers = Future<List<Uri>> Function(String webIdOrIssuer);
 
+/// Function type for customizing prompt calculation based on scopes and configured prompts.
+///
+/// This function is called when the library needs to determine the effective
+/// prompts for the OIDC authorization request.
+///
+/// ## Parameters
+///
+/// - [configuredPrompts]: The prompts explicitly configured in [SolidOidcUserManagerSettings.prompt]
+/// - [effectiveScopes]: The complete list of scopes that will be requested during authentication
+///
+/// ## Return Value
+///
+/// Should return a list of prompt values to be sent to the identity provider.
+/// The library will use this list as-is, so ensure proper deduplication and validation.
+///
+/// ## Default Behavior
+///
+/// If not provided, the library uses the default Solid behavior:
+/// - Includes all configured prompts
+/// - Automatically adds `consent` when `offline_access` is in the effective scopes
+///
+/// ## Custom Implementation Example
+///
+/// ```dart
+/// List<String> customPromptCalculator(List<String> configuredPrompts, List<String> effectiveScopes) {
+///   final prompts = <String>{...configuredPrompts};
+///
+///   // Custom logic: only add consent for specific providers
+///   if (effectiveScopes.contains('offline_access') && isSpecialProvider()) {
+///     prompts.add('consent');
+///   }
+///
+///   // Always force login for sensitive operations
+///   if (effectiveScopes.contains('admin')) {
+///     prompts.add('login');
+///   }
+///
+///   return prompts.toList()..sort();
+/// }
+///
+/// final settings = SolidOidcUserManagerSettings(
+///   redirectUri: Uri.parse('https://myapp.com/callback'),
+///   calculateEffectivePrompts: customPromptCalculator,
+/// );
+/// ```
+typedef CalculateEffectivePrompts = List<String> Function(
+  List<String> configuredPrompts,
+  List<String> effectiveScopes,
+);
+
 Future<List<Uri>> _getIssuersDefault(String webIdOrIssuer) async {
   try {
     return [Uri.parse(await solid_auth_issuer.getIssuer(webIdOrIssuer))];
@@ -215,7 +265,6 @@ class _RsaInfo {
 /// ```dart
 /// final settings = SolidOidcUserManagerSettings(
 ///   redirectUri: Uri.parse('https://myapp.com/callback'),
-///   extraScopes: ['profile', 'email'],
 ///   strictJwtVerification: true,
 ///   supportOfflineAuth: false,
 ///   refreshBefore: Duration(minutes: 5),
@@ -232,10 +281,34 @@ class _RsaInfo {
 /// ## Solid-Specific Defaults
 ///
 /// This class provides sensible defaults for Solid OIDC:
-/// - Default scopes: `['openid', 'webid', 'offline_access']`
+/// - Default scopes: `['openid', 'webid', 'offline_access']` (recommended for Flutter apps)
+/// - Automatic `consent` prompt when `offline_access` scope is requested
 /// - WebID discovery integration via [getIssuers]
 /// - DPoP token support for enhanced security
 /// - Automatic session restoration capabilities
+///
+/// ## Scope Usage in Solid
+///
+/// Unlike traditional OAuth2 APIs, Solid applications typically don't need
+/// additional scopes beyond the defaults. Access control in Solid is handled
+/// at the resource level through Web Access Control (WAC) or Access Control
+/// Policies (ACP), not through OAuth2 scopes.
+///
+/// The default scopes `['openid', 'webid', 'offline_access']` are sufficient
+/// for virtually all Solid applications. Extra scopes are only needed for
+/// specialized scenarios such as hybrid applications that integrate with
+/// both Solid pods and traditional OAuth2 APIs.
+///
+/// ## Prompt Handling
+///
+/// The library automatically adds the `consent` prompt when the effective scopes
+/// include `offline_access` (which is included by default). This ensures users
+/// explicitly consent to refresh token capabilities, which is often required
+/// by OIDC providers for security compliance.
+///
+/// For advanced use cases, you can customize prompt calculation using the
+/// [calculateEffectivePrompts] parameter to implement custom logic based on
+/// scopes and application requirements.
 class SolidOidcUserManagerSettings {
   /// Creates a new instance of [SolidOidcUserManagerSettings].
   ///
@@ -245,7 +318,8 @@ class SolidOidcUserManagerSettings {
     required this.redirectUri,
     this.uiLocales,
     this.extraTokenHeaders,
-    this.extraScopes = defaultScopes,
+    this.defaultScopes = staticDefaultScopes,
+    this.extraScopes = const [],
     this.prompt = const [],
     this.display,
     this.acrValues,
@@ -259,7 +333,7 @@ class SolidOidcUserManagerSettings {
     this.userInfoSettings = const OidcUserInfoSettings(),
     this.frontChannelRequestListeningOptions =
         const OidcFrontChannelRequestListeningOptions(),
-    this.refreshBefore,
+    this.refreshBefore = defaultRefreshBefore,
     this.strictJwtVerification = false,
     this.getExpiresIn,
     this.sessionManagementSettings = const OidcSessionManagementSettings(),
@@ -269,15 +343,47 @@ class SolidOidcUserManagerSettings {
     this.extraRevocationParameters,
     this.extraRevocationHeaders,
     this.getIssuers,
+    this.calculateEffectivePrompts,
   });
 
-  /// The default scopes required for Solid OIDC authentication.
+  /// The static default scopes required for Solid OIDC authentication.
   ///
   /// These scopes provide:
   /// - `openid`: Basic OpenID Connect functionality
   /// - `webid`: Access to the user's WebID (Solid-specific)
   /// - `offline_access`: Ability to refresh tokens when the user is offline
-  static const defaultScopes = ['openid', 'webid', 'offline_access'];
+  ///
+  /// This constant provides the recommended baseline scopes for Solid OIDC.
+  /// Individual instances can override these via the [defaultScopes] parameter.
+  static const staticDefaultScopes = ['openid', 'webid', 'offline_access'];
+
+  /// The configurable default scopes for this instance.
+  ///
+  /// These scopes form the base set of scopes that will be requested during
+  /// authentication. For most Flutter applications, the default scopes
+  /// `['openid', 'webid', 'offline_access']` are recommended and should not
+  /// be changed.
+  ///
+  /// The `offline_access` scope is particularly important for Flutter apps as it
+  /// enables refresh tokens, allowing the app to maintain authentication across
+  /// app restarts and network interruptions without requiring re-authentication.
+  ///
+  /// **Note**: This parameter is primarily intended for advanced use cases or
+  /// specialized integrations. Most Solid applications should use the default
+  /// scopes without modification:
+  ///
+  /// ```dart
+  /// // Recommended: Use default scopes for typical Solid apps
+  /// final settings = SolidOidcUserManagerSettings(
+  ///   redirectUri: Uri.parse('https://myapp.com/callback'),
+  ///   // No scope configuration needed - defaults are ideal
+  /// );
+  /// ```
+  ///
+  /// **Security Note**: Removing `offline_access` from default scopes will
+  /// prevent refresh token functionality and require re-authentication when
+  /// access tokens expire, which is generally not suitable for Flutter Solid applications.
+  final List<String> defaultScopes;
 
   /// Settings to control using the user_info endpoint.
   final OidcUserInfoSettings userInfoSettings;
@@ -312,10 +418,45 @@ class SolidOidcUserManagerSettings {
   final OidcFrontChannelRequestListeningOptions
       frontChannelRequestListeningOptions;
 
-  /// see [OidcAuthorizeRequest.scope].
+  /// Additional scopes to request beyond the default scopes.
+  ///
+  /// **Note**: Extra scopes are rarely needed for Solid applications. Access
+  /// control in Solid is typically handled at the resource level through Web
+  /// Access Control (WAC) or Access Control Policies (ACP), not through OAuth2 scopes.
+  ///
+  /// This parameter is primarily for specialized scenarios such as:
+  /// - Hybrid applications that integrate with both Solid pods and traditional OAuth2 APIs
+  /// - Identity providers that offer additional profile information beyond WebID
+  /// - Custom provider-specific functionality
+  ///
+  /// For pure Solid applications, the default scopes `['openid', 'webid', 'offline_access']`
+  /// are typically sufficient.
+  ///
+  /// ```dart
+  /// // Most Solid apps don't need extra scopes
+  /// final settings = SolidOidcUserManagerSettings(
+  ///   redirectUri: Uri.parse('https://myapp.com/callback'),
+  ///   // extraScopes typically not needed
+  /// );
+  ///
+  /// // Only for specialized hybrid applications
+  /// final hybridSettings = SolidOidcUserManagerSettings(
+  ///   redirectUri: Uri.parse('https://myapp.com/callback'),
+  ///   extraScopes: ['profile'], // For non-Solid API integration
+  /// );
+  /// ```
   final List<String> extraScopes;
 
-  /// see [OidcAuthorizeRequest.prompt].
+  /// Custom prompts for the authorization request.
+  ///
+  /// These prompts control how the identity provider handles user interaction
+  /// during authentication. See [OidcAuthorizeRequest.prompt] for standard values.
+  ///
+  /// **Note**: The `consent` prompt is automatically added when the effective
+  /// scopes include `offline_access` (which is included by default). This ensures
+  /// users explicitly consent to refresh token capabilities required for offline access.
+  ///
+  /// Example: `['login', 'select_account']` - force re-authentication and account selection
   final List<String> prompt;
 
   /// see [OidcAuthorizeRequest.display].
@@ -374,6 +515,37 @@ class SolidOidcUserManagerSettings {
   /// 3. Use that as the identity provider URI
   final GetIssuers? getIssuers;
 
+  /// Custom function for calculating effective prompts based on scopes and configured prompts.
+  ///
+  /// This function overrides the default prompt calculation behavior.
+  /// See [CalculateEffectivePrompts] typedef for detailed documentation and examples.
+  ///
+  /// When `null`, the library uses the default Solid behavior:
+  /// - Includes all configured prompts from [prompt]
+  /// - Automatically adds `consent` when `offline_access` is in the effective scopes
+  ///
+  /// When provided, gives full control over prompt calculation for advanced use cases:
+  ///
+  /// ```dart
+  /// final settings = SolidOidcUserManagerSettings(
+  ///   redirectUri: Uri.parse('https://myapp.com/callback'),
+  ///   calculateEffectivePrompts: (configuredPrompts, effectiveScopes) {
+  ///     final prompts = <String>{...configuredPrompts};
+  ///
+  ///     // Custom logic: only add consent for offline access in production
+  ///     if (effectiveScopes.contains('offline_access') && kReleaseMode) {
+  ///       prompts.add('consent');
+  ///     }
+  ///
+  ///     return prompts.toList()..sort();
+  ///   },
+  /// );
+  /// ```
+  ///
+  /// **Note**: This is an advanced feature primarily intended for specialized
+  /// integration scenarios. Most applications should rely on the default behavior.
+  final CalculateEffectivePrompts? calculateEffectivePrompts;
+
   /// pass this function to control how an `id_token` is fetched from a
   /// token response.
   ///
@@ -392,6 +564,7 @@ class SolidOidcUserManagerSettings {
     Uri? redirectUri,
     List<String>? uiLocales,
     Map<String, String>? extraTokenHeaders,
+    List<String>? defaultScopes,
     List<String>? extraScopes,
     List<String>? prompt,
     String? display,
@@ -416,11 +589,13 @@ class SolidOidcUserManagerSettings {
     Map<String, dynamic>? extraRevocationParameters,
     Map<String, String>? extraRevocationHeaders,
     GetIssuers? getIssuers,
+    CalculateEffectivePrompts? calculateEffectivePrompts,
   }) {
     return SolidOidcUserManagerSettings(
       redirectUri: redirectUri ?? this.redirectUri,
       uiLocales: uiLocales ?? this.uiLocales,
       extraTokenHeaders: extraTokenHeaders ?? this.extraTokenHeaders,
+      defaultScopes: defaultScopes ?? this.defaultScopes,
       extraScopes: extraScopes ?? this.extraScopes,
       prompt: prompt ?? this.prompt,
       display: display ?? this.display,
@@ -453,6 +628,8 @@ class SolidOidcUserManagerSettings {
       extraRevocationHeaders:
           extraRevocationHeaders ?? this.extraRevocationHeaders,
       getIssuers: getIssuers ?? this.getIssuers,
+      calculateEffectivePrompts:
+          calculateEffectivePrompts ?? this.calculateEffectivePrompts,
     );
   }
 }
@@ -689,7 +866,6 @@ class SolidOidcUserManager {
         );
 
         request.headers!['DPoP'] = dPopToken;
-
         return Future.value(request);
       },
     );
@@ -701,18 +877,17 @@ class SolidOidcUserManager {
               as OidcExecutionHookMixin<OidcTokenHookRequest, OidcTokenResponse>
           : dpopHookTokenHook,
     );
+
+    // Compute effective scopes once to avoid duplication
+    final effectiveScopes = getEffectiveScopes();
+
     _manager = OidcUserManager.lazy(
       discoveryDocumentUri: wellKnownUri,
       clientCredentials: clientCredentials,
       store: store,
       settings: OidcUserManagerSettings(
         strictJwtVerification: _settings.strictJwtVerification,
-        scope: {
-          // we are more aggressive with our scopes - those scopes simply
-          // are needed for solid-oidc.
-          ...SolidOidcUserManagerSettings.defaultScopes,
-          ..._settings.extraScopes,
-        }.toList(),
+        scope: effectiveScopes,
         frontChannelLogoutUri: _settings.frontChannelLogoutUri,
         redirectUri: _settings.redirectUri,
         postLogoutRedirectUri: _settings.postLogoutRedirectUri,
@@ -724,7 +899,7 @@ class SolidOidcUserManager {
         extraTokenHeaders: _settings.extraTokenHeaders,
         extraTokenParameters: _settings.extraTokenParameters,
         uiLocales: _settings.uiLocales,
-        prompt: _settings.prompt,
+        prompt: getEffectivePrompts(effectiveScopes),
         maxAge: _settings.maxAge,
         extraRevocationHeaders: _settings.extraRevocationHeaders,
         extraRevocationParameters: _settings.extraRevocationParameters,
@@ -756,6 +931,70 @@ class SolidOidcUserManager {
     }
   }
 
+  List<String> getEffectiveScopes() {
+    return {
+      // Use the configurable default scopes for this instance
+      ..._settings.defaultScopes,
+      ..._settings.extraScopes,
+    }.toList()
+      // make sure the result is always the same
+      ..sort();
+  }
+
+  /// Calculates the effective prompts for the OIDC authorization request.
+  ///
+  /// This method combines the configured prompts with automatically added
+  /// prompts based on the requested scopes, or delegates to a custom function
+  /// if [SolidOidcUserManagerSettings.calculateEffectivePrompts] is provided.
+  ///
+  /// ## Parameters
+  ///
+  /// - [scopes]: The effective scopes that will be requested during authentication
+  ///
+  /// ## Default Behavior (when [calculateEffectivePrompts] is null)
+  ///
+  /// - Includes all configured prompts from [SolidOidcUserManagerSettings.prompt]
+  /// - Automatically adds `consent` when `offline_access` is in the provided scopes
+  /// - Custom prompts from [SolidOidcUserManagerSettings.prompt] are preserved
+  ///
+  /// ## Custom Behavior
+  ///
+  /// When [SolidOidcUserManagerSettings.calculateEffectivePrompts] is provided,
+  /// that function takes full control over prompt calculation and receives:
+  /// - The configured prompts from settings
+  /// - The effective scopes for the request
+  ///
+  /// ## Automatic Consent Prompt (Default Behavior)
+  ///
+  /// The `consent` prompt is required when requesting `offline_access` because:
+  /// - Refresh tokens allow long-term access without user interaction
+  /// - Users must explicitly consent to this enhanced access level
+  /// - Many OIDC providers require explicit consent for offline access
+  ///
+  /// ## Return Value
+  ///
+  /// Returns a list of prompt values to be sent to the identity provider
+  /// during the authorization request.
+  List<String> getEffectivePrompts(List<String> scopes) {
+    // Use custom function if provided
+    if (_settings.calculateEffectivePrompts != null) {
+      return _settings.calculateEffectivePrompts!(_settings.prompt, scopes);
+    }
+
+    // Default behavior: include configured prompts and add consent for offline_access
+    final prompts = <String>{..._settings.prompt};
+
+    // Automatically add 'consent' prompt when offline_access is requested
+    // This ensures users explicitly consent to refresh token capabilities
+    if (scopes.contains('offline_access')) {
+      prompts.add('consent');
+    }
+
+    return prompts.toList()
+      // Ensure consistent ordering
+      ..sort();
+  }
+
   Future<void> _generateAndPersistRsaKeyPair() async {
     final rsaInfo = await solid_auth_client.genRsaKeyPair();
     final rsa = rsaInfo['rsa'] as KeyPair;
@@ -778,6 +1017,13 @@ class SolidOidcUserManager {
   /// 4. **Token Exchange**: Code is exchanged for access and ID tokens
   /// 5. **WebID Extraction**: WebID is extracted and validated from tokens
   /// 6. **DPoP Integration**: Tokens are enhanced with DPoP proof-of-possession
+  ///
+  /// ## Consent Requirements
+  ///
+  /// The authentication flow automatically includes a `consent` prompt when
+  /// `offline_access` is in the requested scopes (included by default). This
+  /// ensures users explicitly consent to refresh token capabilities, which
+  /// many identity providers require for security compliance.
   ///
   /// ## Platform Behavior
   ///
