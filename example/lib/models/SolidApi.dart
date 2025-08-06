@@ -4,6 +4,7 @@ import 'dart:math';
 
 // Package imports:
 import 'package:http/http.dart' as http;
+import 'package:solid_auth/solid_auth.dart';
 
 const _chars =
     'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890_-';
@@ -41,17 +42,19 @@ Future<String> fetchPrvProfile(
 }
 
 // Update profile information
-Future<String> updateProfile(String profCardUrl, String accessToken,
-    String dPopToken, String query) async {
+Future<String> updateProfile(
+    String profCardUrl, SolidAuth solidAuth, String query) async {
+  // Generate DPoP token
+  final dPopToken = solidAuth.genDpopToken(profCardUrl, 'PATCH');
+
   final editResponse = await http.patch(
     Uri.parse(profCardUrl),
     headers: <String, String>{
       'Accept': '*/*',
-      'Authorization': 'DPoP $accessToken',
       'Connection': 'keep-alive',
       'Content-Type': 'application/sparql-update',
       'Content-Length': query.length.toString(),
-      'DPoP': dPopToken,
+      ...dPopToken.httpHeaders(),
     },
     body: query,
   );

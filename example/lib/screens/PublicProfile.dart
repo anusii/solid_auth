@@ -5,17 +5,39 @@ import 'package:flutter/material.dart';
 import 'package:solid_auth_example/models/Constants.dart';
 import 'package:solid_auth_example/components/Header.dart';
 import 'package:solid_auth_example/screens/ProfileInfo.dart';
-//import 'package:solid_auth_example/models/RestAPI.dart';
 import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth_example/models/GetRdfData.dart';
+import 'package:http/http.dart' as http;
 
 class PublicProfile extends StatefulWidget {
-  final String webId;
+  final SolidAuth solidAuth; // SolidAuth instance
+  final String webId; // Web ID for public profile
 
-  const PublicProfile({Key? key, required this.webId}) : super(key: key);
+  const PublicProfile({Key? key, required this.solidAuth, required this.webId})
+      : super(key: key);
 
   @override
   State<PublicProfile> createState() => _PublicProfileState();
+}
+
+/// Get public profile information from webId
+Future<String> _fetchProfileData(String profUrl) async {
+  final response = await http.get(
+    Uri.parse(profUrl),
+    headers: <String, String>{
+      'Content-Type': 'text/turtle',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    /// If the server did return a 200 OK response,
+    /// then parse the JSON.
+    return response.body;
+  } else {
+    /// If the server did not return a 200 OK response,
+    /// then throw an exception.
+    throw Exception('Failed to load data! Try again in a while.');
+  }
 }
 
 class _PublicProfileState extends State<PublicProfile> {
@@ -110,12 +132,19 @@ class _PublicProfileState extends State<PublicProfile> {
       color: Colors.white,
       child: Column(
         children: [
-          Header(mainDrawer: _scaffoldKey, logoutUrl: 'none'),
+          Header(
+            mainDrawer: _scaffoldKey,
+            solidAuth: widget.solidAuth,
+          ),
           Divider(thickness: 1),
           Expanded(
             child: SingleChildScrollView(
                 padding: EdgeInsets.all(kDefaultPadding * 1.5),
-                child: ProfileInfo(profData: profData, profType: 'public')),
+                child: ProfileInfo(
+                  profData: profData,
+                  profType: 'public',
+                  solidAuth: widget.solidAuth,
+                )),
           )
         ],
       ),
@@ -124,14 +153,14 @@ class _PublicProfileState extends State<PublicProfile> {
 
   @override
   Widget build(BuildContext context) {
-    String webId = widget.webId;
+    String webId = widget.webId; // Get the webId from the widget
 
     return Scaffold(
       key: _scaffoldKey,
       body: SafeArea(
         child: FutureBuilder(
-            future: fetchProfileData(
-                webId), // Get profile data (.ttl file) from the webId
+            // Get profile data (.ttl file) from the webId
+            future: _fetchProfileData(webId),
             builder: (context, snapshot) {
               Widget returnVal;
               if (snapshot.connectionState == ConnectionState.done) {

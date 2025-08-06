@@ -1,23 +1,20 @@
 // Flutter imports:
 import 'package:flutter/material.dart';
-
+import 'package:solid_auth/solid_auth.dart';
 // Project imports:
 import 'package:solid_auth_example/models/Constants.dart';
 import 'package:solid_auth_example/screens/EditProfile.dart';
 
 class ProfileInfo extends StatelessWidget {
   final Map profData; // Profile data
-  final Map? authData; // Authentication related data
   final String profType; // Public or private
-  final String? webId; // WebId of the user
-
-  const ProfileInfo(
-      {Key? key,
-      required this.profData,
-      required this.profType,
-      this.authData,
-      this.webId})
-      : super(key: key);
+  final SolidAuth solidAuth; // SolidAuth instance
+  const ProfileInfo({
+    Key? key,
+    required this.profData,
+    required this.profType,
+    required this.solidAuth,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -69,13 +66,12 @@ class ProfileInfo extends StatelessWidget {
                             color: Colors.white,
                             onPressed: () {
                               // Navigate to the profile edit function
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => EditProfile(
-                                          authData: authData!,
-                                          webId: webId!,
                                           profData: profData,
+                                          solidAuth: solidAuth,
                                         )),
                               );
                             },
