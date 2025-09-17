@@ -1,5 +1,8 @@
 library solid_auth;
 
+// Export open id classes
+export 'src/openid/src/openid.dart';
+
 /// Dart imports:
 import 'dart:async';
 import 'dart:convert';

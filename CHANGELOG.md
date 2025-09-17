@@ -1,3 +1,6 @@
+## [0.1.28 20250917]
+* Export openid_client
+
 ## [0.1.27 20250626]
 * Repair pointycastle dependency
 
