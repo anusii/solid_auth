@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'dart:typed_data';
 
 void arrayCopy(List src, int srcPos, List dest, int destPos, int length) {

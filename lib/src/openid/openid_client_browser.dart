@@ -1,9 +1,11 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
-import 'openid_client.dart';
-import 'dart:html' hide Credential, Client;
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html' hide Credential, Client;
+
+import 'openid_client.dart';
+
 export 'openid_client.dart';
 
 class Authenticator {
@@ -18,14 +20,19 @@ class Authenticator {
     Client client, {
     Iterable<String> scopes = const [],
     popToken = '',
-  }) : this._(Flow.authorizationCodeWithPKCE(client,
-            state: window.localStorage['openid_client:state'])
-          ..scopes.addAll(scopes)
-          ..redirectUri = Uri.parse(window.location.href.contains('#/')
+  }) : this._(
+          Flow.authorizationCodeWithPKCE(
+            client,
+            state: window.localStorage['openid_client:state'],
+          )
+            ..scopes.addAll(scopes)
+            ..redirectUri = Uri.parse(
+              window.location.href.contains('#/')
                   ? window.location.href.replaceAll('#/', 'callback.html')
-                  : window.location.href + 'callback.html')
-              .removeFragment()
-          ..dPoPToken = popToken);
+                  : window.location.href + 'callback.html',
+            ).removeFragment()
+            ..dPoPToken = popToken,
+        );
 
   void authorize() {
     _forgetCredentials();
@@ -42,7 +49,8 @@ class Authenticator {
     var c = await credential;
     if (c == null) return;
     var uri = c.generateLogoutUrl(
-        redirectUri: Uri.parse(window.location.href).removeFragment());
+      redirectUri: Uri.parse(window.location.href).removeFragment(),
+    );
     if (uri != null) {
       window.location.href = uri.toString();
     }

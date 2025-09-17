@@ -1,8 +1,9 @@
 library ed25519;
 
 import 'dart:typed_data';
-import 'package:convert/convert.dart';
+
 import 'package:collection/collection.dart';
+import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 
 import 'ed25519.dart';
@@ -106,7 +107,8 @@ PrivateKey newKeyFromSeed(Uint8List seed) {
 Uint8List sign(PrivateKey privateKey, Uint8List message) {
   if (privateKey.bytes.length != PrivateKeySize) {
     throw ArgumentError(
-        'ed25519: bad privateKey length ${privateKey.bytes.length}');
+      'ed25519: bad privateKey length ${privateKey.bytes.length}',
+    );
   }
   var h = sha512.convert(privateKey.bytes.sublist(0, 32));
   var digest1 = h.bytes;
@@ -141,8 +143,12 @@ Uint8List sign(PrivateKey privateKey, Uint8List message) {
   ScReduce(hramDigestReduced, hramDigest as Uint8List);
 
   var s = Uint8List(32);
-  ScMulAdd(s, hramDigestReduced, expandedSecretKey as Uint8List,
-      messageDigestReduced);
+  ScMulAdd(
+    s,
+    hramDigestReduced,
+    expandedSecretKey as Uint8List,
+    messageDigestReduced,
+  );
 
   var signature = Uint8List(SignatureSize);
   arrayCopy(encodedR, 0, signature, 0, 32);
@@ -156,7 +162,8 @@ Uint8List sign(PrivateKey privateKey, Uint8List message) {
 bool verify(PublicKey publicKey, Uint8List message, Uint8List sig) {
   if (publicKey.bytes.length != PublicKeySize) {
     throw ArgumentError(
-        'ed25519: bad publicKey length ${publicKey.bytes.length}');
+      'ed25519: bad publicKey length ${publicKey.bytes.length}',
+    );
   }
   if (sig.length != SignatureSize || sig[63] & 224 != 0) {
     return false;

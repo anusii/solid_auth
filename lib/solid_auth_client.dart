@@ -1,30 +1,36 @@
 part of 'solid_auth.dart';
 
 /// Dynamically register the user in the POD server
-Future<String> clientDynamicReg(String regEndpoint, List reidirUrlList,
-    String authMethod, List scopes) async {
-  final response = await http.post(Uri.parse(regEndpoint),
-      headers: <String, String>{
-        'Accept': '*/*',
-        'Content-Type': 'application/json',
-        'Connection': 'keep-alive',
-        'Accept-Encoding': 'gzip, deflate, br',
-        // 'Sec-Fetch-Dest': 'empty',
-        // 'Sec-Fetch-Mode': 'cors',
-        // 'Sec-Fetch-Site': 'cross-site',
-      },
-      body: json.encode({
-        "application_type": "web",
-        "scope": scopes.join(' '),
-        "grant_types": ["authorization_code", "refresh_token"],
-        "redirect_uris": reidirUrlList,
-        "token_endpoint_auth_method": authMethod,
-        //"client_name": "fluttersolidauth",
-        //"id_token_signed_response_alg": "RS256",
-        //"subject_type": "pairwise",
-        //"userinfo_encrypted_response_alg": "RSA1_5",
-        //"userinfo_encrypted_response_enc": "A128CBC-HS256",
-      }));
+Future<String> clientDynamicReg(
+  String regEndpoint,
+  List reidirUrlList,
+  String authMethod,
+  List scopes,
+) async {
+  final response = await http.post(
+    Uri.parse(regEndpoint),
+    headers: <String, String>{
+      'Accept': '*/*',
+      'Content-Type': 'application/json',
+      'Connection': 'keep-alive',
+      'Accept-Encoding': 'gzip, deflate, br',
+      // 'Sec-Fetch-Dest': 'empty',
+      // 'Sec-Fetch-Mode': 'cors',
+      // 'Sec-Fetch-Site': 'cross-site',
+    },
+    body: json.encode({
+      'application_type': 'web',
+      'scope': scopes.join(' '),
+      'grant_types': ['authorization_code', 'refresh_token'],
+      'redirect_uris': reidirUrlList,
+      'token_endpoint_auth_method': authMethod,
+      //"client_name": "fluttersolidauth",
+      //"id_token_signed_response_alg": "RS256",
+      //"subject_type": "pairwise",
+      //"userinfo_encrypted_response_alg": "RSA1_5",
+      //"userinfo_encrypted_response_enc": "A128CBC-HS256",
+    }),
+  );
 
   if (response.statusCode == 201) {
     /// If the server did return a 200 OK response,
@@ -46,17 +52,21 @@ Future<Map> genRsaKeyPair() async {
   var publicKeyJwk = await RSA.convertPublicKeyToJWK(rsaKeyPair.publicKey);
   var privateKeyJwk = await RSA.convertPrivateKeyToJWK(rsaKeyPair.privateKey);
 
-  publicKeyJwk['alg'] = "RS256";
+  publicKeyJwk['alg'] = 'RS256';
   return {
     'rsa': rsaKeyPair,
     'privKeyJwk': privateKeyJwk,
-    'pubKeyJwk': publicKeyJwk
+    'pubKeyJwk': publicKeyJwk,
   };
 }
 
 /// Generate dPoP token for the authentication
-String genDpopToken(String endPointUrl, KeyPair rsaKeyPair,
-    dynamic publicKeyJwk, String httpMethod) {
+String genDpopToken(
+  String endPointUrl,
+  KeyPair rsaKeyPair,
+  dynamic publicKeyJwk,
+  String httpMethod,
+) {
   /// https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop-03
   /// Unique identifier for DPoP proof JWT
   /// Here we are using a version 4 UUID according to https://datatracker.ietf.org/doc/html/rfc4122
@@ -66,13 +76,13 @@ String genDpopToken(String endPointUrl, KeyPair rsaKeyPair,
   /// Initialising token head and body (payload)
   /// https://solid.github.io/solid-oidc/primer/#authorization-code-pkce-flow
   /// https://datatracker.ietf.org/doc/html/rfc7519
-  var tokenHead = {"alg": "RS256", "typ": "dpop+jwt", "jwk": publicKeyJwk};
+  var tokenHead = {'alg': 'RS256', 'typ': 'dpop+jwt', 'jwk': publicKeyJwk};
 
   var tokenBody = {
-    "htu": endPointUrl,
-    "htm": httpMethod,
-    "jti": tokenId,
-    "iat": (DateTime.now().millisecondsSinceEpoch / 1000).round()
+    'htu': endPointUrl,
+    'htm': httpMethod,
+    'jti': tokenId,
+    'iat': (DateTime.now().millisecondsSinceEpoch / 1000).round(),
   };
 
   /// Create a json web token
@@ -82,15 +92,20 @@ String genDpopToken(String endPointUrl, KeyPair rsaKeyPair,
   );
 
   /// Sign the JWT using private key
-  var dpopToken = jwt.sign(RSAPrivateKey(rsaKeyPair.privateKey),
-      algorithm: JWTAlgorithm.RS256);
+  var dpopToken = jwt.sign(
+    RSAPrivateKey(rsaKeyPair.privateKey),
+    algorithm: JWTAlgorithm.RS256,
+  );
 
   return dpopToken;
 }
 
 /// The authentication function
 Future<Map> authenticate(
-    Uri issuerUri, List<String> scopes, BuildContext context) async {
+  Uri issuerUri,
+  List<String> scopes,
+  BuildContext context,
+) async {
   /// Platform type parameter
   String platformType;
 
@@ -156,7 +171,7 @@ Future<Map> authenticate(
 
   ///Generate DPoP token using the RSA private key
   String dPopToken =
-      genDpopToken(tokenEndpoint, rsaKeyPair, publicKeyJwk, "POST");
+      genDpopToken(tokenEndpoint, rsaKeyPair, publicKeyJwk, 'POST');
 
   final String _clientId = regResJson['client_id'];
   final String _clientSecret = regResJson['client_secret'];
@@ -197,12 +212,13 @@ Future<Map> authenticate(
 
     var oidc = authManager.getOidcWeb();
     var callbackUri = await oidc.authorizeInteractive(
-        context: context,
-        title: 'authProcess',
-        authorizationUrl: authenticator.flow.authenticationUri.toString(),
-        redirectUrl: redirUrl,
-        popupWidth: 700,
-        popupHeight: 500);
+      context: context,
+      title: 'authProcess',
+      authorizationUrl: authenticator.flow.authenticationUri.toString(),
+      redirectUrl: redirUrl,
+      popupWidth: 700,
+      popupHeight: 500,
+    );
 
     var regResponse = Uri.parse(callbackUri).queryParameters;
     authResponse = await authenticator.flow.callback(regResponse);
@@ -235,7 +251,7 @@ Future<Map> authenticate(
       'idToken': tokenResponse.idToken,
       'refreshToken': tokenResponse.refreshToken,
       'expiresIn': tokenResponse.expiresIn,
-      'logoutUrl': _logoutUrl
+      'logoutUrl': _logoutUrl,
     };
   }
 

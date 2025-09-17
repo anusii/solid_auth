@@ -1,9 +1,11 @@
 library openid_client.io;
 
-import 'openid_client.dart';
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+
+import 'openid_client.dart';
 
 export 'openid_client.dart';
 
@@ -23,13 +25,14 @@ class Authenticator {
   })  : port = flow.redirectUri.port,
         urlLancher = urlLancher ?? _runBrowser;
 
-  Authenticator(Client client,
-      {this.port = 4000,
-      this.urlLancher = _runBrowser,
-      this.popToken = '',
-      Iterable<String> scopes = const [],
-      Uri? redirectUri})
-      : flow = redirectUri == null
+  Authenticator(
+    Client client, {
+    this.port = 4000,
+    this.urlLancher = _runBrowser,
+    this.popToken = '',
+    Iterable<String> scopes = const [],
+    Uri? redirectUri,
+  }) : flow = redirectUri == null
             ? Flow.authorizationCode(client)
             : Flow.authorizationCodeWithPKCE(client)
           ..scopes.addAll(scopes)

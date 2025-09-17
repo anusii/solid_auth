@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'dart:typed_data';
 
 final jsonBase64 = json.fuse(utf8.fuse(base64Url));

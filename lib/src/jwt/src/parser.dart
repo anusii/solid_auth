@@ -1,8 +1,8 @@
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:typed_data';
 
-import 'package:pointycastle/pointycastle.dart';
 import 'package:pointycastle/ecc/ecc_fp.dart' as ecc_fp;
+import 'package:pointycastle/pointycastle.dart';
 
 import 'utils.dart';
 
