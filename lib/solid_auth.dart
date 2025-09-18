@@ -16,7 +16,7 @@ import 'package:solid_auth/src/jwt/dart_jsonwebtoken.dart';
 import 'package:solid_auth/src/openid/openid_client.dart';
 import 'package:solid_auth/src/openid/openid_client_io.dart' as oidc_mobile;
 
-export 'src/openid/src/openid.dart';
+export 'src/openid/src/openid.dart' show Credential, TokenResponse;
 
 part 'solid_auth_client.dart';
 part 'solid_auth_issuer.dart';
