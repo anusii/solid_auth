@@ -224,9 +224,42 @@ Create a redirect handler HTML page at your `frontendRedirectUrl` location. **Us
 
 ### Mobile & Desktop Applications
 
-Each platform requires specific configuration for URL schemes and redirect handling.
+Each platform requires specific configuration for URL schemes and redirect handling. **Additionally, you must configure network permissions for Solid pod authentication to work properly.**
 
 See the [OIDC Getting Started Guide](https://bdaya-dev.github.io/oidc/oidc-getting-started/) for detailed, up-to-date instructions for each platform.
+
+#### 🌐 Required Network Permissions
+
+Since Solid authentication requires network access to communicate with identity providers and pod servers, you must configure the following platform-specific network permissions:
+
+**Android** - Add to `android/app/src/main/AndroidManifest.xml`:
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Your existing application configuration -->
+</manifest>
+```
+
+**macOS** - Add to both `macos/Runner/DebugProfile.entitlements` and `macos/Runner/Release.entitlements`:
+```xml
+<key>com.apple.security.network.client</key>
+<true />
+```
+
+Example for `DebugProfile.entitlements`:
+```xml
+<dict>
+    <key>com.apple.security.app-sandbox</key>
+    <true />
+    <key>com.apple.security.network.server</key>
+    <true />
+    <key>com.apple.security.network.client</key>
+    <true />
+    <!-- Your existing entitlements -->
+</dict>
+```
+
+⚠️ **Note**: Without these network permissions, authentication will fail silently or with network-related errors. These permissions are essential for connecting to Solid identity providers.
 
 ## 🔒 Security Considerations
 
