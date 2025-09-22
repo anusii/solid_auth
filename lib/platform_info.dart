@@ -26,6 +26,8 @@
 ///
 /// Authors: Anushka Vidanage
 
+library;
+
 // Dart imports:
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
