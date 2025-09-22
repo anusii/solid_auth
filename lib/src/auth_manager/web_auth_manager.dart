@@ -26,12 +26,9 @@
 ///
 /// Authors: Anushka Vidanage
 
-// Dart imports:
-import 'dart:html';
-
+import 'package:openid_client/openid_client_browser.dart';
 import 'package:openidconnect_web/openidconnect_web.dart';
-
-import 'package:solid_auth/src/openid/openid_client_browser.dart';
+import 'package:web/web.dart' hide Client;
 
 // Project imports:
 import 'auth_manager_abstract.dart';
@@ -42,7 +39,8 @@ class WebAuthManager implements AuthManager {
   WebAuthManager() {
     windowLoc = window;
     // storing something initially just to make sure it works.
-    windowLoc.localStorage['MyKey'] = 'I am from web local storage';
+    // windowLoc.localStorage.setItem('MyKey', 'I am from web local storage');
+    windowLoc.localStorage.setItem('MyKey', 'I am from web local storage');
   }
 
   String getWebUrl() {
@@ -69,12 +67,13 @@ class WebAuthManager implements AuthManager {
   }
 
   String getKeyValue(String key) {
-    return windowLoc.localStorage[key]!;
+    // return windowLoc.localStorage.getItem(key) as String;
+    return windowLoc.localStorage.getItem(key)!;
   }
 
   userLogout(String logoutUrl) {
     final child = window.open(logoutUrl, 'user_logout');
-    child.close();
+    child!.close();
   }
 }
 

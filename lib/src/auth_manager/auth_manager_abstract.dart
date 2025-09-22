@@ -27,7 +27,9 @@
 /// Authors: Anushka Vidanage
 
 // import just for the client class. Not used anywhere else.
-import 'package:solid_auth/src/openid/src/openid.dart';
+// import 'package:openid_client/openid_client.dart';
+
+import 'package:openid_client/openid_client.dart';
 
 import 'auth_manager_stub.dart'
     // ignore: uri_does_not_exist
