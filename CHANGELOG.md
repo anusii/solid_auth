@@ -9,6 +9,7 @@ utilised by the flutter version_widget package.
 
 ## 0.2 Stability
 
++ Remove embedded openid and jwt from package [0.1.28 20250923 anushkavidanage]
 + Export openid_client [0.1.28 20250917 anushkavidanage]
 + Repair pointycastle dependency [0.1.27 20250626 anushkavidanage]
 + Update dependencies [0.1.26 20250626 anushkavidanage]
