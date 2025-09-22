@@ -30,10 +30,13 @@ class TokenResponse extends JsonObject {
       : super.from({
           if (json['expires_in'] != null && json['expires_at'] == null)
             'expires_at': DateTime.now()
-                    .add(Duration(
+                    .add(
+                      Duration(
                         seconds: json['expires_in'] is String
                             ? int.parse(json['expires_in'])
-                            : json['expires_in']))
+                            : json['expires_in'],
+                      ),
+                    )
                     .millisecondsSinceEpoch ~/
                 1000,
           ...json,

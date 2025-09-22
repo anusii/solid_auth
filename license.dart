@@ -1,6 +1,8 @@
-/// Get Auth Manager
+/// SolidPod library to support privacy first data store on Solid Servers
 ///
-/// Copyright (C) 2025, Software Innovation Institute, ANU.
+// Time-stamp: <Monday 2025-09-22 15:59:26 +1000 Graham Williams>
+///
+/// Copyright (C) 2025, Software Innovation Institute ANU
 ///
 /// Licensed under the MIT License (the "License").
 ///
@@ -24,10 +26,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 ///
-/// Authors: Anushka Vidanage
+/// Authors: AUTHORS
 
-import 'auth_manager_abstract.dart';
+// Add the library directive as we have doc entries above. We publish the above
+// meta doc lines in the docs.
 
-AuthManager getAuthManager() => throw UnsupportedError(
-      'Cannot create a keyfinder without the packages dart:html or package:shared_preferences',
-    );
+library;

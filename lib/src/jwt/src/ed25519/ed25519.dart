@@ -25,7 +25,12 @@ class FieldElement {
 }
 
 void fieldElementCopy(
-    FieldElement src, int srcPos, FieldElement dest, int destPos, int length) {
+  FieldElement src,
+  int srcPos,
+  FieldElement dest,
+  int destPos,
+  int length,
+) {
   dest.innerList.setRange(destPos, length + destPos, src.innerList, srcPos);
 }
 
@@ -275,8 +280,19 @@ void FeNeg(FieldElement h, FieldElement f) {
   h[9] = -f[9];
 }
 
-void FeCombine(FieldElement h, int h0, int h1, int h2, int h3, int h4, int h5,
-    int h6, int h7, int h8, int h9) {
+void FeCombine(
+  FieldElement h,
+  int h0,
+  int h1,
+  int h2,
+  int h3,
+  int h4,
+  int h5,
+  int h6,
+  int h7,
+  int h8,
+  int h9,
+) {
   var c0 = 0;
   var c1 = 0;
   var c2 = 0;
@@ -611,7 +627,7 @@ List<int> feSquare(f) {
     h6 as int,
     h7 as int,
     h8 as int,
-    h9 as int
+    h9 as int,
   ];
 }
 
@@ -974,7 +990,10 @@ class PreComputedGroupElement {
   PreComputedGroupElement();
 
   PreComputedGroupElement.fromList(
-      FieldElement ypx, FieldElement ymx, FieldElement xy2d) {
+    FieldElement ypx,
+    FieldElement ymx,
+    FieldElement xy2d,
+  ) {
     yPlusX = ypx;
     yMinusX = ymx;
     this.xy2d = xy2d;
@@ -995,7 +1014,10 @@ class CachedGroupElement {
 }
 
 void geAdd(
-    CompletedGroupElement r, ExtendedGroupElement p, CachedGroupElement q) {
+  CompletedGroupElement r,
+  ExtendedGroupElement p,
+  CachedGroupElement q,
+) {
   var t0 = FieldElement();
 
   FeAdd(r.X, p.Y, p.X);
@@ -1012,7 +1034,10 @@ void geAdd(
 }
 
 void geSub(
-    CompletedGroupElement r, ExtendedGroupElement p, CachedGroupElement q) {
+  CompletedGroupElement r,
+  ExtendedGroupElement p,
+  CachedGroupElement q,
+) {
   var t0 = FieldElement();
 
   FeAdd(r.X, p.Y, p.X);
@@ -1028,8 +1053,11 @@ void geSub(
   FeAdd(r.T, t0, r.T);
 }
 
-void geMixedAdd(CompletedGroupElement r, ExtendedGroupElement p,
-    PreComputedGroupElement q) {
+void geMixedAdd(
+  CompletedGroupElement r,
+  ExtendedGroupElement p,
+  PreComputedGroupElement q,
+) {
   var t0 = FieldElement();
 
   FeAdd(r.X, p.Y, p.X);
@@ -1045,8 +1073,11 @@ void geMixedAdd(CompletedGroupElement r, ExtendedGroupElement p,
   FeSub(r.T, t0, r.T);
 }
 
-void geMixedSub(CompletedGroupElement r, ExtendedGroupElement p,
-    PreComputedGroupElement q) {
+void geMixedSub(
+  CompletedGroupElement r,
+  ExtendedGroupElement p,
+  PreComputedGroupElement q,
+) {
   var t0 = FieldElement();
 
   FeAdd(r.X, p.Y, p.X);
@@ -1095,12 +1126,18 @@ void slide(Int8List r, Uint8List a) {
 /// where a = a[0]+256*a[1]+...+256^31 a[31].
 /// and b = b[0]+256*b[1]+...+256^31 b[31].
 /// B is the Ed25519 base point (x,4/5) with x positive.
-void GeDoubleScalarMultVartime(ProjectiveGroupElement r, Uint8List a,
-    ExtendedGroupElement A, Uint8List b) {
+void GeDoubleScalarMultVartime(
+  ProjectiveGroupElement r,
+  Uint8List a,
+  ExtendedGroupElement A,
+  Uint8List b,
+) {
   var aSlide = Int8List(256);
   var bSlide = Int8List(256);
   var Ai = List.generate(
-      8, (index) => CachedGroupElement()); // A,3A,5A,7A,9A,11A,13A,15A
+    8,
+    (index) => CachedGroupElement(),
+  ); // A,3A,5A,7A,9A,11A,13A,15A
   var t = CompletedGroupElement();
   var u = ExtendedGroupElement();
   var A2 = ExtendedGroupElement();
@@ -1174,7 +1211,10 @@ int negative(int b) {
 }
 
 void PreComputedGroupElementCMove(
-    PreComputedGroupElement t, PreComputedGroupElement u, int b) {
+  PreComputedGroupElement t,
+  PreComputedGroupElement u,
+  int b,
+) {
   FeCMove(t.yPlusX, u.yPlusX, b);
   FeCMove(t.yMinusX, u.yMinusX, b);
   FeCMove(t.xy2d, u.xy2d, b);
@@ -2102,7 +2142,7 @@ var order = List<BigInt>.from(
     BigInt.parse('0x5812631a5cf5d3ed'),
     BigInt.parse('0x14def9dea2f79cd6'),
     BigInt.from(0),
-    BigInt.parse('0x1000000000000000')
+    BigInt.parse('0x1000000000000000'),
   ],
 );
 

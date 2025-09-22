@@ -52,63 +52,65 @@ class Issuer {
       Uri.parse('https://securetoken.google.com/$id');
 
   static final Map<Uri, Issuer?> _discoveries = {
-    facebook: Issuer(OpenIdProviderMetadata.fromJson({
-      'issuer': facebook.toString(),
-      'authorization_endpoint': 'https://www.facebook.com/v2.8/dialog/oauth',
-      'token_endpoint': 'https://graph.facebook.com/v2.8/oauth/access_token',
-      'userinfo_endpoint': 'https://graph.facebook.com/v2.8/879023912133394',
-      'response_types_supported': ['token', 'code', 'code token'],
-      'token_endpoint_auth_methods_supported': ['client_secret_post'],
-      'scopes_supported': [
-        'public_profile',
-        'user_friends',
-        'email',
-        'user_about_me',
-        'user_actions.books',
-        'user_actions.fitness',
-        'user_actions.music',
-        'user_actions.news',
-        'user_actions.video',
-        'user_birthday',
-        'user_education_history',
-        'user_events',
-        'user_games_activity',
-        'user_hometown',
-        'user_likes',
-        'user_location',
-        'user_managed_groups',
-        'user_photos',
-        'user_posts',
-        'user_relationships',
-        'user_relationship_details',
-        'user_religion_politics',
-        'user_tagged_places',
-        'user_videos',
-        'user_website',
-        'user_work_history',
-        'read_custom_friendlists',
-        'read_insights',
-        'read_audience_network_insights',
-        'read_page_mailboxes',
-        'manage_pages',
-        'publish_pages',
-        'publish_actions',
-        'rsvp_event',
-        'pages_show_list',
-        'pages_manage_cta',
-        'pages_manage_instant_articles',
-        'ads_read',
-        'ads_management',
-        'business_management',
-        'pages_messaging',
-        'pages_messaging_subscriptions',
-        'pages_messaging_phone_number'
-      ]
-    })),
+    facebook: Issuer(
+      OpenIdProviderMetadata.fromJson({
+        'issuer': facebook.toString(),
+        'authorization_endpoint': 'https://www.facebook.com/v2.8/dialog/oauth',
+        'token_endpoint': 'https://graph.facebook.com/v2.8/oauth/access_token',
+        'userinfo_endpoint': 'https://graph.facebook.com/v2.8/879023912133394',
+        'response_types_supported': ['token', 'code', 'code token'],
+        'token_endpoint_auth_methods_supported': ['client_secret_post'],
+        'scopes_supported': [
+          'public_profile',
+          'user_friends',
+          'email',
+          'user_about_me',
+          'user_actions.books',
+          'user_actions.fitness',
+          'user_actions.music',
+          'user_actions.news',
+          'user_actions.video',
+          'user_birthday',
+          'user_education_history',
+          'user_events',
+          'user_games_activity',
+          'user_hometown',
+          'user_likes',
+          'user_location',
+          'user_managed_groups',
+          'user_photos',
+          'user_posts',
+          'user_relationships',
+          'user_relationship_details',
+          'user_religion_politics',
+          'user_tagged_places',
+          'user_videos',
+          'user_website',
+          'user_work_history',
+          'read_custom_friendlists',
+          'read_insights',
+          'read_audience_network_insights',
+          'read_page_mailboxes',
+          'manage_pages',
+          'publish_pages',
+          'publish_actions',
+          'rsvp_event',
+          'pages_show_list',
+          'pages_manage_cta',
+          'pages_manage_instant_articles',
+          'ads_read',
+          'ads_management',
+          'business_management',
+          'pages_messaging',
+          'pages_messaging_subscriptions',
+          'pages_messaging_phone_number',
+        ],
+      }),
+    ),
     google: null,
     yahoo: null,
     microsoft: null,
-    salesforce: null
+    salesforce: null,
   };
 
   static Iterable<Uri> get knownIssuers => _discoveries.keys;
@@ -144,8 +146,10 @@ class Client {
 
   Client(this.issuer, this.clientId, {this.clientSecret, this.httpClient});
 
-  static Future<Client> forIdToken(String idToken,
-      {http.Client? httpClient}) async {
+  static Future<Client> forIdToken(
+    String idToken, {
+    http.Client? httpClient,
+  }) async {
     var token = JsonWebToken.unverified(idToken);
     var claims = OpenIdClaims.fromJson(token.claims.toJson());
     var issuer = await Issuer.discover(claims.issuer, httpClient: httpClient);
@@ -157,25 +161,27 @@ class Client {
   }
 
   /// Creates a [Credential] for this client.
-  Credential createCredential(
-          {String? accessToken,
-          String? tokenType,
-          String? refreshToken,
-          Duration? expiresIn,
-          DateTime? expiresAt,
-          String? idToken}) =>
+  Credential createCredential({
+    String? accessToken,
+    String? tokenType,
+    String? refreshToken,
+    Duration? expiresIn,
+    DateTime? expiresAt,
+    String? idToken,
+  }) =>
       Credential._(
-          this,
-          TokenResponse.fromJson({
-            'access_token': accessToken,
-            'token_type': tokenType,
-            'refresh_token': refreshToken,
-            'id_token': idToken,
-            if (expiresIn != null) 'expires_in': expiresIn.inSeconds,
-            if (expiresAt != null)
-              'expires_at': expiresAt.millisecondsSinceEpoch ~/ 1000
-          }),
-          null);
+        this,
+        TokenResponse.fromJson({
+          'access_token': accessToken,
+          'token_type': tokenType,
+          'refresh_token': refreshToken,
+          'id_token': idToken,
+          if (expiresIn != null) 'expires_in': expiresIn.inSeconds,
+          if (expiresAt != null)
+            'expires_at': expiresAt.millisecondsSinceEpoch ~/ 1000,
+        }),
+        null,
+      );
 }
 
 class Credential {
@@ -227,17 +233,21 @@ class Credential {
   ///
   /// See https://openid.net/specs/openid-connect-rpinitiated-1_0.html
   Uri? generateLogoutUrl({Uri? redirectUri, String? state}) {
-    return client.issuer.metadata.endSessionEndpoint?.replace(queryParameters: {
-      'id_token_hint': _token.idToken.toCompactSerialization(),
-      if (redirectUri != null)
-        'post_logout_redirect_uri': redirectUri.toString(),
-      if (state != null) 'state': state
-    });
+    return client.issuer.metadata.endSessionEndpoint?.replace(
+      queryParameters: {
+        'id_token_hint': _token.idToken.toCompactSerialization(),
+        if (redirectUri != null)
+          'post_logout_redirect_uri': redirectUri.toString(),
+        if (state != null) 'state': state,
+      },
+    );
   }
 
   http.Client createHttpClient([http.Client? baseClient]) =>
       http.AuthorizedClient(
-          baseClient ?? client.httpClient ?? http.Client(), this);
+        baseClient ?? client.httpClient ?? http.Client(),
+        this,
+      );
 
   Future _get(uri) async {
     return http.get(uri, client: createHttpClient());
@@ -249,34 +259,44 @@ class Credential {
 
   IdToken get idToken => _token.idToken;
 
-  Stream<Exception> validateToken(
-      {bool validateClaims = true, bool validateExpiry = true}) async* {
+  Stream<Exception> validateToken({
+    bool validateClaims = true,
+    bool validateExpiry = true,
+  }) async* {
     var keyStore = JsonWebKeyStore();
     var jwksUri = client.issuer.metadata.jwksUri;
     if (jwksUri != null) {
       keyStore.addKeySetUrl(jwksUri);
     }
-    if (!await idToken.verify(keyStore,
-        allowedArguments:
-            client.issuer.metadata.idTokenSigningAlgValuesSupported)) {
+    if (!await idToken.verify(
+      keyStore,
+      allowedArguments: client.issuer.metadata.idTokenSigningAlgValuesSupported,
+    )) {
       yield JoseException('Could not verify token signature');
     }
 
-    yield* Stream.fromIterable(idToken.claims
-        .validate(
+    yield* Stream.fromIterable(
+      idToken.claims
+          .validate(
             expiryTolerance: const Duration(seconds: 30),
             issuer: client.issuer.metadata.issuer,
             clientId: client.clientId,
-            nonce: nonce)
-        .where((e) =>
-            validateExpiry ||
-            !(e is JoseException && e.message.startsWith('JWT expired.'))));
+            nonce: nonce,
+          )
+          .where(
+            (e) =>
+                validateExpiry ||
+                !(e is JoseException && e.message.startsWith('JWT expired.')),
+          ),
+    );
   }
 
   String? get refreshToken => _token.refreshToken;
 
-  Future<TokenResponse> getTokenResponse(
-      {bool forceRefresh = false, String dPoPToken = ''}) async {
+  Future<TokenResponse> getTokenResponse({
+    bool forceRefresh = false,
+    String dPoPToken = '',
+  }) async {
     if (!forceRefresh &&
         _token.accessToken != null &&
         (_token.expiresAt == null ||
@@ -291,23 +311,28 @@ class Credential {
         base64.encode('${client.clientId}:${client.clientSecret}'.codeUnits);
 
     ///Generate DPoP token using the RSA private key
-    var json = await http.post(client.issuer.tokenEndpoint,
-        headers: {
-          'Accept': '*/*',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'content-type': 'application/x-www-form-urlencoded',
-          'DPoP': dPoPToken,
-          'Authorization': 'Basic $h',
-        },
-        body: {
-          'grant_type': 'refresh_token',
-          'token_type': 'DPoP',
-          'refresh_token': _token.refreshToken,
-        },
-        client: client.httpClient);
+    var json = await http.post(
+      client.issuer.tokenEndpoint,
+      headers: {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'content-type': 'application/x-www-form-urlencoded',
+        'DPoP': dPoPToken,
+        'Authorization': 'Basic $h',
+      },
+      body: {
+        'grant_type': 'refresh_token',
+        'token_type': 'DPoP',
+        'refresh_token': _token.refreshToken,
+      },
+      client: client.httpClient,
+    );
     if (json['error'] != null) {
       throw OpenIdException(
-          json['error'], json['error_description'], json['error_uri']);
+        json['error'],
+        json['error_description'],
+        json['error_uri'],
+      );
     }
 
     //return _token = TokenResponse.fromJson(json);
@@ -319,21 +344,26 @@ class Credential {
 
   Credential.fromJson(Map<String, dynamic> json, {http.Client? httpClient})
       : this._(
-            Client(
-                Issuer(OpenIdProviderMetadata.fromJson(
-                    (json['issuer'] as Map).cast())),
-                json['client_id'],
-                clientSecret: json['client_secret'],
-                httpClient: httpClient),
-            TokenResponse.fromJson((json['token'] as Map).cast()),
-            json['nonce']);
+          Client(
+            Issuer(
+              OpenIdProviderMetadata.fromJson(
+                (json['issuer'] as Map).cast(),
+              ),
+            ),
+            json['client_id'],
+            clientSecret: json['client_secret'],
+            httpClient: httpClient,
+          ),
+          TokenResponse.fromJson((json['token'] as Map).cast()),
+          json['nonce'],
+        );
 
   Map<String, dynamic> toJson() => {
         'issuer': client.issuer.metadata.toJson(),
         'client_id': client.clientId,
         'client_secret': client.clientSecret,
         'token': _token.toJson(),
-        'nonce': nonce
+        'nonce': nonce,
       };
 }
 
@@ -383,12 +413,15 @@ class Flow {
   //     }
   //   }
 
-  Flow._(this.type, this.responseType, this.client,
-      {String? state,
-      Map<String, String>? additionalParameters,
-      Uri? redirectUri,
-      List<String> scopes = const ['openid', 'profile', 'offline_access']})
-      : state = state ?? _randomString(20),
+  Flow._(
+    this.type,
+    this.responseType,
+    this.client, {
+    String? state,
+    Map<String, String>? additionalParameters,
+    Uri? redirectUri,
+    List<String> scopes = const ['openid', 'profile', 'offline_access'],
+  })  : state = state ?? _randomString(20),
         _additionalParameters = {...?additionalParameters},
         redirectUri = redirectUri ?? Uri.parse('http://localhost') {
     var supportedScopes = client.issuer.metadata.scopesSupported ?? [];
@@ -404,36 +437,42 @@ class Flow {
         .replaceAll('=', '');
     _proofKeyForCodeExchange = {
       'code_verifier': verifier,
-      'code_challenge': challenge
+      'code_challenge': challenge,
     };
   }
 
-  Flow.authorizationCode(Client client,
-      {String? state,
-      String? prompt,
-      String? accessType,
-      Uri? redirectUri,
-      List<String> scopes = const ['openid', 'profile', 'offline_access']})
-      : this._(FlowType.authorizationCode, 'code', client,
-            state: state,
-            additionalParameters: {
-              if (prompt != null) 'prompt': prompt,
-              if (accessType != null) 'access_type': accessType,
-            },
-            scopes: scopes,
-            redirectUri: redirectUri);
+  Flow.authorizationCode(
+    Client client, {
+    String? state,
+    String? prompt,
+    String? accessType,
+    Uri? redirectUri,
+    List<String> scopes = const ['openid', 'profile', 'offline_access'],
+  }) : this._(
+          FlowType.authorizationCode,
+          'code',
+          client,
+          state: state,
+          additionalParameters: {
+            if (prompt != null) 'prompt': prompt,
+            if (accessType != null) 'access_type': accessType,
+          },
+          scopes: scopes,
+          redirectUri: redirectUri,
+        );
 
   Flow.authorizationCodeWithPKCE(Client client, {String? state})
       : this._(FlowType.proofKeyForCodeExchange, 'code', client, state: state);
 
   Flow.implicit(Client client, {String? state})
       : this._(
-            FlowType.implicit,
-            ['token id_token', 'id_token token', 'id_token', 'token']
-                .firstWhere((v) =>
-                    client.issuer.metadata.responseTypesSupported.contains(v)),
-            client,
-            state: state);
+          FlowType.implicit,
+          ['token id_token', 'id_token token', 'id_token', 'token'].firstWhere(
+            (v) => client.issuer.metadata.responseTypesSupported.contains(v),
+          ),
+          client,
+          state: state,
+        );
 
   Flow.jwtBearer(Client client) : this._(FlowType.jwtBearer, null, client);
 
@@ -452,14 +491,15 @@ class Flow {
       'client_id': client.clientId,
       'redirect_uri': redirectUri.toString(),
       'prompt': 'consent',
-      'state': state
+      'state': state,
     }..addAll(
-        responseType!.split(' ').contains('id_token') ? {'nonce': _nonce} : {});
+        responseType!.split(' ').contains('id_token') ? {'nonce': _nonce} : {},
+      );
 
     if (type == FlowType.proofKeyForCodeExchange) {
       v.addAll({
         'code_challenge_method': 'S256',
-        'code_challenge': _proofKeyForCodeExchange['code_challenge']
+        'code_challenge': _proofKeyForCodeExchange['code_challenge'],
       });
     }
     return v;
@@ -469,61 +509,72 @@ class Flow {
     var methods = client.issuer.metadata.tokenEndpointAuthMethodsSupported;
     Map<String, dynamic> json;
     if (type == FlowType.jwtBearer) {
-      json = await http.post(client.issuer.tokenEndpoint,
-          body: {
-            'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            'assertion': code,
-          },
-          client: client.httpClient);
+      json = await http.post(
+        client.issuer.tokenEndpoint,
+        body: {
+          'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          'assertion': code,
+        },
+        client: client.httpClient,
+      );
     } else if (type == FlowType.proofKeyForCodeExchange) {
       var h =
           base64.encode('${client.clientId}:${client.clientSecret}'.codeUnits);
-      json = await http.post(client.issuer.tokenEndpoint,
-          headers: {
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DPoP': dPoPToken,
-            'content-type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic $h',
-            //'Connection': 'keep-alive',
-          },
-          body: {
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': redirectUri.toString(),
-            //'client_id': client.clientId,
-            // if (client.clientSecret != null)
-            //   'client_secret': client.clientSecret,
-            'code_verifier': _proofKeyForCodeExchange['code_verifier']
-          },
-          client: client.httpClient);
+      json = await http.post(
+        client.issuer.tokenEndpoint,
+        headers: {
+          'Accept': '*/*',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DPoP': dPoPToken,
+          'content-type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic $h',
+          //'Connection': 'keep-alive',
+        },
+        body: {
+          'grant_type': 'authorization_code',
+          'code': code,
+          'redirect_uri': redirectUri.toString(),
+          //'client_id': client.clientId,
+          // if (client.clientSecret != null)
+          //   'client_secret': client.clientSecret,
+          'code_verifier': _proofKeyForCodeExchange['code_verifier'],
+        },
+        client: client.httpClient,
+      );
     } else if (methods!.contains('client_secret_post')) {
-      json = await http.post(client.issuer.tokenEndpoint,
-          body: {
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': redirectUri.toString(),
-            'client_id': client.clientId,
-            'client_secret': client.clientSecret
-          },
-          client: client.httpClient);
+      json = await http.post(
+        client.issuer.tokenEndpoint,
+        body: {
+          'grant_type': 'authorization_code',
+          'code': code,
+          'redirect_uri': redirectUri.toString(),
+          'client_id': client.clientId,
+          'client_secret': client.clientSecret,
+        },
+        client: client.httpClient,
+      );
     } else if (methods.contains('client_secret_basic')) {
       var h =
           base64.encode('${client.clientId}:${client.clientSecret}'.codeUnits);
-      json = await http.post(client.issuer.tokenEndpoint,
-          headers: {'authorization': 'Basic $h'},
-          body: {
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': redirectUri.toString()
-          },
-          client: client.httpClient);
+      json = await http.post(
+        client.issuer.tokenEndpoint,
+        headers: {'authorization': 'Basic $h'},
+        body: {
+          'grant_type': 'authorization_code',
+          'code': code,
+          'redirect_uri': redirectUri.toString(),
+        },
+        client: client.httpClient,
+      );
     } else {
       throw UnsupportedError('Unknown auth methods: $methods');
     }
     if (json['error'] != null) {
       throw OpenIdException(
-          json['error'], json['error_description'], json['error_uri']);
+        json['error'],
+        json['error_description'],
+        json['error_uri'],
+      );
     }
     return TokenResponse.fromJson(json);
   }
@@ -620,8 +671,10 @@ class OpenIdException implements Exception {
   /// Thrown when trying to get a token, but the token endpoint is missing from
   /// the issuer metadata
   const OpenIdException.missingTokenEndpoint()
-      : this._('missing_token_endpoint',
-            'The issuer metadata does not contain a token endpoint.');
+      : this._(
+          'missing_token_endpoint',
+          'The issuer metadata does not contain a token endpoint.',
+        );
 
   const OpenIdException._(this.code, this.message) : uri = null;
 
