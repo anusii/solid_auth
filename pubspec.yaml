@@ -23,10 +23,10 @@ dependencies:
 #  openidconnect_platform_interface: ^1.0.17
   # openid_client: ^0.4.9+1
   openid_client:
-    path: ../openid_client
-    # git:
-    #   url: https://github.com/anusii/openid_client
-    #   ref: av/custom_edits_for_solid_auth
+    # path: ../openid_client
+    git:
+      url: https://github.com/anusii/openid_client
+      ref: av/custom_edits_for_solid_auth
   openidconnect_web: ^1.0.26
   url_launcher: ^6.3.1
 #  url_launcher_android: ^6.3.15
