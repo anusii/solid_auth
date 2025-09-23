@@ -1,5 +1,5 @@
 name: solid_auth_example
-description: An example Flutter application to demonstrate authentication to SOLID pods.
+description: Demonstrate authentication to SOLID pods.
 publish_to: "none"
 version: 1.0.0+1
 
