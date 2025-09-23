@@ -7,9 +7,11 @@ class PlatformInfo {
   bool isDesktopOS() {
     return Platform.isMacOS || Platform.isLinux || Platform.isWindows;
   }
+
   bool isAppOS() {
     return Platform.isIOS || Platform.isAndroid;
   }
+
   bool isWeb() {
     return kIsWeb;
   }
@@ -40,13 +42,4 @@ class PlatformInfo {
   }
 }
 
-enum PlatformType {
-  Web,
-  iOS,
-  Android,
-  MacOS,
-  Fuchsia,
-  Linux,
-  Windows,
-  Unknown
-}
+enum PlatformType { Web, iOS, Android, MacOS, Fuchsia, Linux, Windows, Unknown }
