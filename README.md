@@ -44,7 +44,8 @@ start using the package. -->
 
 To use this package add `solid_auth` as a dependency in your
 `pubspec.yaml` file. An example project that uses `solid_auth` can be
-found [here](https://github.com/anusii/solid_auth/tree/main/example).
+found on
+[github](https://github.com/anusii/solid_auth/tree/main/example).
 
 ### Authentication Example
 
@@ -122,25 +123,30 @@ that file.
 <html>
 
 <head>
-    <script>
-        const AUTH_DESTINATION_KEY = "openidconnect_auth_destination_url";
-        const AUTH_RESPONSE_KEY = "openidconnect_auth_response_info";
+  <script>
+    const AUTH_DESTINATION_KEY = "openidconnect_auth_destination_url";
+    const AUTH_RESPONSE_KEY = "openidconnect_auth_response_info";
 
-        window.onload = function () {
-            if (window.opener && window.opener !== window) { //Used when working as a popup. Uses post message to respond to the parent window
-                var parent = window.opener ?? window.parent;
-                parent.postMessage(location.href, "*");
-            } else { //Used for redirect loop functionality.
-                //Get the original page destination
-                const destination = sessionStorage.getItem(AUTH_DESTINATION_KEY || "/");
-                sessionStorage.removeItem(AUTH_DESTINATION_KEY);
-                //Store the current window location that will be used to get the information for authentication
-                sessionStorage.setItem(AUTH_RESPONSE_KEY, window.location);
+    window.onload = function () {
+    if (window.opener && window.opener !== window) {
+      // Used when working as a popup.
+      // Uses post message to respond to the parent window.
+          var parent = window.opener ?? window.parent;
+      parent.postMessage(location.href, "*");
+    } else { //Used for redirect loop functionality.
+      //Get the original page destination
+      const destination = sessionStorage.getItem(AUTH_DESTINATION_KEY || "/");
+      sessionStorage.removeItem(AUTH_DESTINATION_KEY);
 
-                //Redirect to where we're going so that we can restore state completely
-                location.assign(destination);
-            }
-        }
+      // Store the current window location that will be used
+      // to get the information for authentication
+      sessionStorage.setItem(AUTH_RESPONSE_KEY, window.location);
+
+      // Redirect to where we're going so that we can
+      // restore state completely
+      location.assign(destination);
+    }
+    }
     </script>
 </head>
 
