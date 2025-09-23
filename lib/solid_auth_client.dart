@@ -215,14 +215,15 @@ Future<Map> authenticate(
     }
 
     /// create an authenticator
-    var authenticator = oidc_mobile.Authenticator(
-      client,
-      scopes: scopes,
-      port: _port,
-      urlLancher: urlLauncher,
-      redirectUri: Uri.parse(redirUrl),
-      popToken: dPopToken,
-    );
+    var authenticator = oidc_mobile.Authenticator(client,
+        scopes: scopes,
+        port: _port,
+        urlLancher: urlLauncher,
+        redirectUri: Uri.parse(redirUrl),
+        popToken: dPopToken,
+        prompt: 'consent',
+        redirectMessage:
+            'Authentication process completed. You can now close this window!');
 
     /// starts the authentication + authorisation process
     authResponse = await authenticator.authorize();
