@@ -27,7 +27,6 @@ dependencies:
       url: https://github.com/anusii/openid_client
       ref: av/custom_edits_for_solid_auth
   openidconnect_web: ^1.0.26
-  pointycastle: ^4.0.0
   url_launcher: ^6.3.1
   uuid: ^4.5.1
   web: ^1.1.1
