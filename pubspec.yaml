@@ -26,6 +26,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   jwt_decoder: ^2.0.1
   solid_auth_example:
+    path: example
 
 flutter:
   assets:
