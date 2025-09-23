@@ -25,6 +25,7 @@
 // SOFTWARE.
 ///
 /// Authors: Anushka Vidanage
+library;
 
 import 'auth_manager_abstract.dart';
 

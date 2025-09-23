@@ -30,21 +30,21 @@ part of 'solid_auth.dart';
 
 /// Get POD issuer URI
 Future<String> getIssuer(String textUrl) async {
-  String _issuerUri = '';
+  String issuerUri = '';
   if (textUrl.contains('profile/card#me')) {
     String pubProf = await fetchProfileData(textUrl);
-    _issuerUri = getIssuerUri(pubProf);
+    issuerUri = getIssuerUri(pubProf);
   }
 
-  if (_issuerUri == '') {
+  if (issuerUri == '') {
     /// This reg expression works with localhost and other urls
     RegExp exp = RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+(\.|\:)[\w\.]+');
     Iterable<RegExpMatch> matches = exp.allMatches(textUrl);
-    matches.forEach((match) {
-      _issuerUri = textUrl.substring(match.start, match.end);
-    });
+    for (var match in matches) {
+      issuerUri = textUrl.substring(match.start, match.end);
+    }
   }
-  return _issuerUri;
+  return issuerUri;
 }
 
 /// Get public profile information from webId

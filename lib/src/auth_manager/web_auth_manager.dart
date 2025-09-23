@@ -25,6 +25,7 @@
 // SOFTWARE.
 ///
 /// Authors: Anushka Vidanage
+library;
 
 import 'package:openid_client/openid_client_browser.dart';
 import 'package:openidconnect_web/openidconnect_web.dart';
@@ -43,34 +44,39 @@ class WebAuthManager implements AuthManager {
     windowLoc.localStorage.setItem('MyKey', 'I am from web local storage');
   }
 
+  @override
   String getWebUrl() {
     if (window.location.href.contains('#/')) {
       return window.location.href.replaceAll('#/', 'callback.html');
     } else {
-      return (window.location.href + 'callback.html');
+      return ('${window.location.href}callback.html');
     }
   }
 
+  @override
   Authenticator createAuthenticator(
     Client client,
     List<String> scopes,
     String dPopToken,
   ) {
     var authenticator =
-        new Authenticator(client, scopes: scopes, popToken: dPopToken);
+        Authenticator(client, scopes: scopes, popToken: dPopToken);
     return authenticator;
   }
 
+  @override
   OpenIdConnectWeb getOidcWeb() {
     OpenIdConnectWeb oidc = OpenIdConnectWeb();
     return oidc;
   }
 
+  @override
   String getKeyValue(String key) {
     // return windowLoc.localStorage.getItem(key) as String;
     return windowLoc.localStorage.getItem(key)!;
   }
 
+  @override
   userLogout(String logoutUrl) {
     final child = window.open(logoutUrl, 'user_logout');
     child!.close();
