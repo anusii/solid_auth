@@ -201,10 +201,10 @@ Future<Map> authenticate(
   String dPopToken =
       genDpopToken(tokenEndpoint, rsaKeyPair, publicKeyJwk, 'POST');
 
-  final String _clientId = regResJson['client_id'];
-  final String _clientSecret = regResJson['client_secret'];
+  final String clientId = regResJson['client_id'];
+  final String clientSecret = regResJson['client_secret'];
 
-  var client = Client(issuer, _clientId, clientSecret: _clientSecret);
+  var client = Client(issuer, clientId, clientSecret: clientSecret);
 
   if (platformType != 'web') {
     /// Create a function to open a browser with an url
@@ -267,7 +267,7 @@ Future<Map> authenticate(
     String? accessToken = tokenResponse.accessToken;
 
     /// Generate the logout URL
-    final _logoutUrl = authResponse.generateLogoutUrl().toString();
+    final logoutUrl = authResponse.generateLogoutUrl().toString();
 
     /// Store authentication data
     authData = {
@@ -279,15 +279,15 @@ Future<Map> authenticate(
       'idToken': tokenResponse.idToken,
       'refreshToken': tokenResponse.refreshToken,
       'expiresIn': tokenResponse.expiresIn,
-      'logoutUrl': _logoutUrl,
+      'logoutUrl': logoutUrl,
     };
   }
 
   return authData;
 }
 
-Future<bool> logout(_logoutUrl) async {
-  Uri url = Uri.parse(_logoutUrl);
+Future<bool> logout(logoutUrl) async {
+  Uri url = Uri.parse(logoutUrl);
 
   if (await canLaunchUrl(url)) {
     //await launch(_logoutUrl, forceWebView: true);

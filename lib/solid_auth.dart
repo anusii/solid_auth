@@ -26,7 +26,7 @@
 ///
 /// Authors: Anushka Vidanage
 
-library solid_auth;
+library;
 
 import 'dart:async';
 import 'dart:convert';
