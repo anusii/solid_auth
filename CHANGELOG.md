@@ -41,7 +41,7 @@ utilised by the flutter version_widget package.
 + Bug fix on web authentication [0.1. anushkavidanage]
 + Package updated to null safety [0.1. anushkavidanage]
 + Community Solid Server (CSS) 3.0 redirect URL bug fix [0.1. anushkavidanage]
-+ Updates to the package to be compatible with Community Solid Server (CSS) 3.0 [0.1. anushkavidanage]
++ Update to be compatible with Community Solid Server (CSS) 3.0 [0.1. anushkavidanage]
 + Updates to the example project in main repository
 + Bug fix on web support [0.1. anushkavidanage]
 + Updated documentation
