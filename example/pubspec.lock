@@ -322,9 +322,11 @@ packages:
   openid_client:
     dependency: transitive
     description:
-      path: "../../openid_client"
-      relative: true
-    source: path
+      path: "."
+      ref: "av/custom_edits_for_solid_auth"
+      resolved-ref: cbca647a4c1df87486f655ebaf87f440bc363928
+      url: "https://github.com/anusii/openid_client"
+    source: git
     version: "0.4.9+1"
   openidconnect_platform_interface:
     dependency: transitive
