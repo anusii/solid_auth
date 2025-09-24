@@ -26,7 +26,35 @@
 ///
 /// Authors: Anushka Vidanage
 
-part of 'solid_auth.dart';
+library;
+
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/widgets.dart';
+
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:fast_rsa/fast_rsa.dart';
+import 'package:http/http.dart' as http;
+import 'package:openid_client/openid_client.dart';
+import 'package:openid_client/openid_client_io.dart' as oidc_mobile;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
+
+import 'package:solid_auth/platform_info.dart';
+import 'package:solid_auth/src/auth_manager/auth_manager_abstract.dart';
+
+/// Set port number to be used in localhost
+
+const int _port = 4400;
+
+/// To get platform information
+
+PlatformInfo currPlatform = PlatformInfo();
+
+/// Initialise authentication manager
+
+AuthManager authManager = AuthManager();
 
 /// Dynamically register the user in the POD server
 Future<String> clientDynamicReg(

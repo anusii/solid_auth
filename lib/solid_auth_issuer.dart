@@ -26,7 +26,11 @@
 ///
 /// Authors: Anushka Vidanage
 
-part of 'solid_auth.dart';
+library;
+
+import 'dart:async';
+
+import 'package:http/http.dart' as http;
 
 /// Get POD issuer URI
 Future<String> getIssuer(String textUrl) async {
