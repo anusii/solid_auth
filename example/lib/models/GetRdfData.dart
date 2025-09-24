@@ -2,11 +2,11 @@
 class PodProfile {
   String profileRdfStr = '';
 
-  PodProfile(String profileRdfStr){
+  PodProfile(String profileRdfStr) {
     this.profileRdfStr = profileRdfStr;
   }
 
-  List<dynamic> divideRdfData(String profileRdfStr){
+  List<dynamic> divideRdfData(String profileRdfStr) {
     List<String> rdfDataList = [];
     String vcardPrefix = '';
     String foafPrefix = '';
@@ -20,8 +20,7 @@ class PodProfile {
           String item = itemList[j];
           rdfDataList.add(item);
         }
-      }
-      else{
+      } else {
         rdfDataList.add(dataItem);
       }
 
@@ -38,7 +37,7 @@ class PodProfile {
     return [rdfDataList, vcardPrefix, foafPrefix];
   }
 
-  List<dynamic> dividePrvRdfData(){
+  List<dynamic> dividePrvRdfData() {
     List<String> rdfDataList = [];
     final Map prefixList = {};
 
@@ -51,8 +50,7 @@ class PodProfile {
           String item = itemList[j];
           rdfDataList.add(item);
         }
-      }
-      else{
+      } else {
         rdfDataList.add(dataItem);
       }
 
@@ -60,13 +58,11 @@ class PodProfile {
         var itemList = dataItem.split(' ');
         prefixList[itemList[1]] = itemList[2];
       }
-
     }
     return [rdfDataList, prefixList];
   }
 
-  
-  String getProfPicture(){
+  String getProfPicture() {
     var rdfRes = divideRdfData(profileRdfStr);
     List<String> rdfDataList = rdfRes[0];
     String vcardPrefix = rdfRes[1];
@@ -75,29 +71,29 @@ class PodProfile {
     String optionalPictureUrl = '';
     for (var i = 0; i < rdfDataList.length; i++) {
       String dataItem = rdfDataList[i];
-      if (dataItem.contains(vcardPrefix+'hasPhoto')) {
+      if (dataItem.contains(vcardPrefix + 'hasPhoto')) {
         var itemList = dataItem.split('<');
         pictureUrl = itemList[1].replaceAll('>', '');
       }
-      if(dataItem.contains(foafPrefix+'img')){
+      if (dataItem.contains(foafPrefix + 'img')) {
         var itemList = dataItem.split('<');
         optionalPictureUrl = itemList[1].replaceAll('>', '');
       }
     }
-    if(pictureUrl.isEmpty & optionalPictureUrl.isNotEmpty){
+    if (pictureUrl.isEmpty & optionalPictureUrl.isNotEmpty) {
       pictureUrl = optionalPictureUrl;
     }
     return pictureUrl;
   }
-  
-  String getProfName(){
+
+  String getProfName() {
     String profName = '';
     var rdfRes = divideRdfData(profileRdfStr);
     List<String> rdfDataList = rdfRes[0];
     String vcardPrefix = rdfRes[1];
     for (var i = 0; i < rdfDataList.length; i++) {
       String dataItem = rdfDataList[i];
-      if(dataItem.contains(vcardPrefix+'fn')){
+      if (dataItem.contains(vcardPrefix + 'fn')) {
         var itemList = dataItem.split('"');
         profName = itemList[1];
       }
@@ -108,14 +104,14 @@ class PodProfile {
     return profName;
   }
 
-  String getPersonalInfo(String infoLabel){
+  String getPersonalInfo(String infoLabel) {
     String personalInfo = '';
     var rdfRes = divideRdfData(profileRdfStr);
     List<String> rdfDataList = rdfRes[0];
     String vcardPrefix = rdfRes[1];
     for (var i = 0; i < rdfDataList.length; i++) {
       String dataItem = rdfDataList[i];
-      if (dataItem.contains(vcardPrefix+infoLabel)) {
+      if (dataItem.contains(vcardPrefix + infoLabel)) {
         var itemList = dataItem.split('"');
         personalInfo = itemList[1];
       }
@@ -123,14 +119,14 @@ class PodProfile {
     return personalInfo;
   }
 
-  String getAddressId(String infoLabel){
+  String getAddressId(String infoLabel) {
     String personalInfo = '';
     var rdfRes = divideRdfData(profileRdfStr);
     List<String> rdfDataList = rdfRes[0];
     String vcardPrefix = rdfRes[1];
     for (var i = 0; i < rdfDataList.length; i++) {
       String dataItem = rdfDataList[i];
-      if (dataItem.contains(vcardPrefix+infoLabel)) {
+      if (dataItem.contains(vcardPrefix + infoLabel)) {
         var itemList = dataItem.split(':');
         personalInfo = itemList[2];
       }

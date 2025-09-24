@@ -32,11 +32,7 @@ library;
 
 import 'package:openid_client/openid_client.dart';
 
-import 'auth_manager_stub.dart'
-    // ignore: uri_does_not_exist
-    // if (dart.library.io) 'MobileOpenId.dart'
-    // ignore: uri_does_not_exist
-    if (dart.library.html) 'web_auth_manager.dart';
+import 'auth_manager_stub.dart' if (dart.library.html) 'web_auth_manager.dart';
 
 abstract class AuthManager {
   // some generic methods to be exposed.
