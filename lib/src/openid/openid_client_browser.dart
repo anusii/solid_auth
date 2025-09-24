@@ -77,7 +77,8 @@ class Authenticator {
     var c = await credential;
     if (c == null) return;
     var uri = c.generateLogoutUrl(
-        redirectUri: Uri.parse(window.location.href).removeFragment());
+      redirectUri: Uri.parse(window.location.href).removeFragment(),
+    );
     if (uri != null) {
       window.location.href = uri.toString();
     }
@@ -96,8 +97,11 @@ class Authenticator {
     if (q.containsKey('access_token') ||
         q.containsKey('code') ||
         q.containsKey('id_token')) {
-      window.history.replaceState(''.toJS, '',
-          Uri.parse(window.location.href).removeFragment().toString());
+      window.history.replaceState(
+        ''.toJS,
+        '',
+        Uri.parse(window.location.href).removeFragment().toString(),
+      );
       window.localStorage.removeItem('openid_client:state');
 
       var c = await flow.callback(q.cast());
@@ -115,19 +119,24 @@ class Authenticator {
   /// when the iframe receives a response from the authorization server. The
   /// future will timeout after [timeout] if the iframe does not receive a
   /// response.
-  Future<Credential> trySilentRefresh(
-      {Duration timeout = const Duration(seconds: 20)}) async {
+  Future<Credential> trySilentRefresh({
+    Duration timeout = const Duration(seconds: 20),
+  }) async {
     var iframe = HTMLIFrameElement();
     var url = flow.authenticationUri;
     window.localStorage.setItem('openid_client:state', flow.state);
-    iframe.src = url.replace(queryParameters: {
-      ...url.queryParameters,
-      'prompt': 'none',
-      'redirect_uri': flow.redirectUri.replace(queryParameters: {
-        ...flow.redirectUri.queryParameters,
-        'iframe': 'true',
-      }).toString(),
-    }).toString();
+    iframe.src = url.replace(
+      queryParameters: {
+        ...url.queryParameters,
+        'prompt': 'none',
+        'redirect_uri': flow.redirectUri.replace(
+          queryParameters: {
+            ...flow.redirectUri.queryParameters,
+            'iframe': 'true',
+          },
+        ).toString(),
+      },
+    ).toString();
     iframe.style.display = 'none';
     document.body!.append(iframe);
     var event = await window.onMessage.first.timeout(timeout).whenComplete(() {
@@ -143,7 +152,8 @@ class Authenticator {
           expiresAt: data['expires_at'] == null
               ? null
               : DateTime.fromMillisecondsSinceEpoch(
-                  int.parse(data['expires_at'].toString()) * 1000),
+                  int.parse(data['expires_at'].toString()) * 1000,
+                ),
           refreshToken: data['refresh_token'],
           expiresIn: data['expires_in'] == null
               ? null

@@ -1,3 +1,6 @@
+// ignore_for_file: unnecessary_library_name
+// ignore_for_file: implementation_imports
+
 library openid.model;
 
 import 'package:jose/src/util.dart';

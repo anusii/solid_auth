@@ -158,16 +158,21 @@ class OpenIdClaims extends JsonWebTokenClaims
   @override
   DateTime get issuedAt => super.issuedAt!;
 
+  // ignore: use_super_parameters
   OpenIdClaims.fromJson(Map<String, dynamic> json) : super.fromJson(json);
 
   @override
-  Iterable<Exception> validate(
-      {Duration expiryTolerance = const Duration(),
-      Uri? issuer,
-      String? clientId,
-      String? nonce}) sync* {
+  Iterable<Exception> validate({
+    Duration expiryTolerance = const Duration(),
+    Uri? issuer,
+    String? clientId,
+    String? nonce,
+  }) sync* {
     yield* super.validate(
-        expiryTolerance: expiryTolerance, issuer: issuer, clientId: clientId);
+      expiryTolerance: expiryTolerance,
+      issuer: issuer,
+      clientId: clientId,
+    );
     if (audience.length > 1 && authorizedParty == null) {
       yield JoseException('No authorized party claim present.');
     }

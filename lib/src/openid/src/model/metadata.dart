@@ -226,5 +226,6 @@ class OpenIdProviderMetadata extends JsonObject {
   List<String>? get codeChallengeMethodsSupported =>
       getTypedList('code_challenge_methods_supported');
 
+  // ignore: use_super_parameters
   OpenIdProviderMetadata.fromJson(Map<String, dynamic> json) : super.from(json);
 }

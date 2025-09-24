@@ -1,3 +1,4 @@
+// ignore: unnecessary_library_name
 library openid_client.io;
 
 import 'dart:async';
@@ -73,10 +74,16 @@ class Authenticator {
         ),
         redirectMessage = redirectMessage ?? 'You can now close this window',
         flow = redirectUri == null
-            ? Flow.authorizationCode(client,
-                prompt: prompt, additionalParameters: additionalParameters)
-            : Flow.authorizationCodeWithPKCE(client,
-                prompt: prompt, additionalParameters: additionalParameters)
+            ? Flow.authorizationCode(
+                client,
+                prompt: prompt,
+                additionalParameters: additionalParameters,
+              )
+            : Flow.authorizationCodeWithPKCE(
+                client,
+                prompt: prompt,
+                additionalParameters: additionalParameters,
+              )
           ..scopes.addAll(scopes)
           ..redirectUri = redirectUri ?? Uri.parse('http://localhost:$port/')
           ..dPoPToken = popToken;
@@ -119,7 +126,10 @@ class Authenticator {
       {};
 
   static Future<HttpServer> _startServer(
-      int port, String? htmlPage, String? redirectMessage) {
+    int port,
+    String? htmlPage,
+    String? redirectMessage,
+  ) {
     return _requestServers[port] ??=
         (HttpServer.bind(InternetAddress.anyIPv4, port)
           ..then((requestServer) async {
@@ -128,11 +138,13 @@ class Authenticator {
               request.response.statusCode = 200;
               if (redirectMessage != null) {
                 request.response.headers.contentType = ContentType.html;
-                request.response.writeln(htmlPage ??
-                    '<html>'
-                        '<h1>$redirectMessage</h1>'
-                        '<script>window.close();</script>'
-                        '</html>');
+                request.response.writeln(
+                  htmlPage ??
+                      '<html>'
+                          '<h1>$redirectMessage</h1>'
+                          '<script>window.close();</script>'
+                          '</html>',
+                );
               }
               await request.response.close();
               var result = request.requestedUri.queryParameters;
@@ -178,7 +190,8 @@ void _runBrowser(String url) {
       break;
     default:
       throw UnsupportedError(
-          'Unsupported platform: ${Platform.operatingSystem}');
+        'Unsupported platform: ${Platform.operatingSystem}',
+      );
   }
 }
 
