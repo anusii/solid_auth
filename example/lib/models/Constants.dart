@@ -15,6 +15,5 @@ const bgOffWhite = Color(0xFFF2F4FC);
 
 const kDefaultPadding = 20.0;
 
-double screenWidth (BuildContext context) => MediaQuery.of(context).size.width;
-double screenHeight (BuildContext context) => MediaQuery.of(context).size.height;
-
+double screenWidth(BuildContext context) => MediaQuery.of(context).size.width;
+double screenHeight(BuildContext context) => MediaQuery.of(context).size.height;

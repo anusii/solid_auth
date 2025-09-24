@@ -147,7 +147,6 @@ class _EditProfileState extends State<EditProfile> {
                                     // Generate DPoP token
                                     String dPopToken = genDpopToken(profCardUrl,
                                         rsaKeyPair, publicKeyJwk, 'PATCH');
-                                    ;
 
                                     List attrList = [
                                       'name',
@@ -235,7 +234,7 @@ class _EditProfileState extends State<EditProfile> {
                                                 dPopToken,
                                                 updateQuery);
                                         numOfUpdates += 1;
-                                        assert(updateResponse != '');
+                                        assert(updateResponse == 'success');
                                       }
                                     }
 

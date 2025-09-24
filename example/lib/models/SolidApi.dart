@@ -59,7 +59,7 @@ Future<String> updateProfile(String profCardUrl, String accessToken,
   if (editResponse.statusCode == 200 || editResponse.statusCode == 205) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    return editResponse.body;
+    return 'success';
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
