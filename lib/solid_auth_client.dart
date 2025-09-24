@@ -36,8 +36,8 @@ import 'package:flutter/widgets.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:http/http.dart' as http;
-import 'package:openid_client/openid_client.dart';
-import 'package:openid_client/openid_client_io.dart' as oidc_mobile;
+// import 'package:openid_client/openid_client.dart';
+// import 'package:openid_client/openid_client_io.dart' as oidc_mobile;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
