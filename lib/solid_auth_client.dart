@@ -240,6 +240,9 @@ Future<Map> authenticate(
         authManager.createAuthenticator(client, scopes, dPopToken);
 
     var oidc = authManager.getOidcWeb();
+
+    if (!context.mounted) return {};
+
     var callbackUri = await oidc.authorizeInteractive(
       context: context,
       title: 'authProcess',

@@ -11,16 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  clock: ^1.1.2
-  collection: ^1.19.1
-  convert: ^3.1.2
-  crypto: ^3.0.6
   dart_jsonwebtoken: ^3.2.0
   fast_rsa: ^3.8.1
   http: ^1.3.0
-  jose: ^0.3.4
-  logging: ^1.3.0
-  # openid_client: ^0.4.9+1
   openid_client:
     # path: ../openid_client
     git:
@@ -33,7 +26,6 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: ^5.0.0
-  flutter_test:
   jwt_decoder: ^2.0.1
   
 
