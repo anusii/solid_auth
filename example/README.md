@@ -1,6 +1,8 @@
 # A demo app for using Solid Auth package
 
-Flutter Demo app for authenticate with Solid PODs. The app can run on both mobile (tested on Anroid) and web platforms (tested on Chrome and Firefox).
+Flutter Demo app for authenticate with Solid PODs. The app can run on
+both mobile (tested on Anroid) and web platforms (tested on Chrome and
+Firefox).
 
 <!-- **Flutter packages used in the app:**
 
@@ -19,13 +21,20 @@ Flutter Demo app for authenticate with Solid PODs. The app can run on both mobil
 - uuid: ^3.0.4
 - openidconnect_platform_interface: ^1.0.3 -->
 
-### Acknowledgement
+## Acknowledgement
 
-Parts of this package (under `lib/src/openid`) are derived from the `openid_client` (https://pub.dev/packages/openid_client) package, with custom modifications to support the Solid OIDC authentication flow. We would like to acknowledge and thank the authors of `openid_client` for their valuable work, which made these adaptations possible.
+Parts of this package (under `lib/src/openid`) are derived from the
+[openid_client](https://pub.dev/packages/openid_client) package, with
+custom modifications to support the Solid OIDC authentication flow. We
+would like to acknowledge and thank the authors of `openid_client` for
+their valuable work, which made these adaptations possible.
 
 ## Usage
 
-Fork the demo app in the `\example` directory into a local directory and open the `pubspec.yaml` file. Check whether the latest version of the package `solid_auth` is added under dependencies. Now run the following to get the necessary packages.
+Fork the demo app in the `\example` directory into a local directory
+and open the `pubspec.yaml` file. Check whether the latest version of
+the package `solid_auth` is added under dependencies. Now run the
+following to get the necessary packages.
 
 ```dart
 flutter pub get
@@ -34,21 +43,22 @@ flutter pub get
 
 ### Running the app on web or mobile
 
-After all the required packages are imported, then first select the device you want the app to run. Then run the app by pressing `CTRL + F5`.
+After all the required packages are imported, then first select the
+device you want the app to run. Then run the app by pressing `CTRL +
+F5`.
 
-To access public data of a POD input the WebID into the text area and click `READ PUBLIC INFO` button.
+To access public data of a POD input the WebID into the text area and
+click `READ PUBLIC INFO` button.
 
-<center> <img src="assets/images/public_data.gif" alt="public data" height="600"> </center>
-<br/>
+![](assets/images/public_data.gif")
 
-To login input the SOLID POD provider URL into the text area and click `LOGIN` button. After login you can edit the profile data.
+To login input the SOLID POD provider URL into the text area and click
+`LOGIN` button. After login you can edit the profile data.
 
-<center> <img src="assets/images/login.gif" alt="public data" height="600"> </center>
-<br/>
+![](assets/images/login.gif)
 
-<center> <img src="assets/images/edit_data.gif" alt="public data" height="600"> </center>
-<br/>
+![](assets/images/edit_data.gif)
 
 To logout simply click the `LOGOUT` button.
 
-<center> <img src="assets/images/logout.gif" alt="public data" height="600"> </center>
+![](assets/images/logout.gif)
