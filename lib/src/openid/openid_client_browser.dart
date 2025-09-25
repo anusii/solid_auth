@@ -1,0 +1,198 @@
+// Copyright (c) 2017, Rik Bellens.
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of the <organization> nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import 'dart:async';
+import 'dart:js_interop';
+
+import 'package:web/web.dart' hide Credential, Client;
+
+import 'openid_client.dart';
+
+export 'openid_client.dart';
+
+/// A wrapper around [Flow] that handles the browser-specific parts of
+/// authentication.
+///
+/// The constructor takes a [Client] and a list of scopes. It then
+/// creates a [Flow] and uses it to generate an authentication URI.
+///
+/// The [authorize] method redirects the browser to the authentication URI.
+///
+/// The [logout] method redirects the browser to the logout URI.
+///
+/// The [credential] property returns a [Future] that completes with a
+/// [Credential] after the user has signed in and the browser is redirected to
+/// the app. Otherwise, it completes with `null`.
+///
+/// The state is not persisted in the browser, so the user will have to sign in
+/// again after a page refresh. If you want to persist the state, you'll have to
+/// store and restore the credential yourself. You can listen to the
+/// [Credential.onTokenChanged] event to be notified when the credential changes.
+class Authenticator {
+  /// The [Flow] used for authentication.
+  ///
+  /// This will be a flow of type [FlowType.implicit].
+  final Flow flow;
+
+  /// A [Future] that completes with a [Credential] after the user has signed in
+  /// and the browser is redirected to the app. Otherwise, it completes with
+  /// `null`.
+  final Future<Credential?> credential;
+
+  Authenticator._(this.flow) : credential = _credentialFromUri(flow);
+
+  // Authenticator(Client client,
+  //     {Iterable<String> scopes = const [], String? device, String? prompt})
+  //     : this._(Flow.implicit(client,
+  //           device: device,
+  //           state: window.localStorage.getItem('openid_client:state'),
+  //           prompt: prompt)
+  //         ..scopes.addAll(scopes)
+  //         ..redirectUri = Uri.parse(window.location.href).removeFragment());
+
+  // With PKCE flow
+  Authenticator(
+    Client client, {
+    Iterable<String> scopes = const [],
+    popToken = '',
+  }) : this._(
+          Flow.authorizationCodeWithPKCE(
+            client,
+            state: window.localStorage.getItem('openid_client:state'),
+          )
+            ..scopes.addAll(scopes)
+            ..redirectUri = Uri.parse(
+              window.location.href.contains('#/')
+                  ? window.location.href.replaceAll('#/', 'callback.html')
+                  : '${window.location.href}callback.html',
+            ).removeFragment()
+            ..dPoPToken = popToken,
+        );
+
+  /// Redirects the browser to the authentication URI.
+  void authorize() {
+    _forgetCredentials();
+    window.localStorage.setItem('openid_client:state', flow.state);
+    window.location.href = flow.authenticationUri.toString();
+  }
+
+  /// Redirects the browser to the logout URI.
+  void logout() async {
+    _forgetCredentials();
+    var c = await credential;
+    if (c == null) return;
+    var uri = c.generateLogoutUrl(
+      redirectUri: Uri.parse(window.location.href).removeFragment(),
+    );
+    if (uri != null) {
+      window.location.href = uri.toString();
+    }
+  }
+
+  void _forgetCredentials() {
+    window.localStorage.removeItem('openid_client:state');
+    window.localStorage.removeItem('openid_client:auth');
+  }
+
+  static Future<Credential?> _credentialFromUri(Flow flow) async {
+    var uri = Uri.parse(window.location.href);
+    var iframe = uri.queryParameters['iframe'] != null;
+    uri = Uri(query: uri.fragment);
+    var q = uri.queryParameters;
+    if (q.containsKey('access_token') ||
+        q.containsKey('code') ||
+        q.containsKey('id_token')) {
+      window.history.replaceState(
+        ''.toJS,
+        '',
+        Uri.parse(window.location.href).removeFragment().toString(),
+      );
+      window.localStorage.removeItem('openid_client:state');
+
+      var c = await flow.callback(q.cast());
+      if (iframe) window.parent!.postMessage(c.response?.toJSBox, '*'.toJS);
+      return c;
+    }
+    return null;
+  }
+
+  /// Tries to refresh the access token silently in a hidden iframe.
+  ///
+  /// The implicit flow does not support refresh tokens. This method uses a
+  /// hidden iframe to try to get a new access token without the user having to
+  /// sign in again. It returns a [Future] that completes with a [Credential]
+  /// when the iframe receives a response from the authorization server. The
+  /// future will timeout after [timeout] if the iframe does not receive a
+  /// response.
+  Future<Credential> trySilentRefresh({
+    Duration timeout = const Duration(seconds: 20),
+  }) async {
+    var iframe = HTMLIFrameElement();
+    var url = flow.authenticationUri;
+    window.localStorage.setItem('openid_client:state', flow.state);
+    iframe.src = url.replace(
+      queryParameters: {
+        ...url.queryParameters,
+        'prompt': 'none',
+        'redirect_uri': flow.redirectUri.replace(
+          queryParameters: {
+            ...flow.redirectUri.queryParameters,
+            'iframe': 'true',
+          },
+        ).toString(),
+      },
+    ).toString();
+    iframe.style.display = 'none';
+    document.body!.append(iframe);
+    var event = await window.onMessage.first.timeout(timeout).whenComplete(() {
+      iframe.remove();
+    });
+
+    var data = event.data?.dartify();
+    if (data is Map) {
+      var current = await credential;
+      if (current == null) {
+        return flow.client.createCredential(
+          accessToken: data['access_token'],
+          expiresAt: data['expires_at'] == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(data['expires_at'].toString()) * 1000,
+                ),
+          refreshToken: data['refresh_token'],
+          expiresIn: data['expires_in'] == null
+              ? null
+              : Duration(seconds: int.parse(data['expires_in'].toString())),
+          tokenType: data['token_type'],
+          idToken: data['id_token'],
+        );
+      } else {
+        return current..updateToken(data.cast());
+      }
+    } else {
+      throw Exception('$data');
+    }
+  }
+}

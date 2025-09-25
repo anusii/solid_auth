@@ -19,6 +19,10 @@ Flutter Demo app for authenticate with Solid PODs. The app can run on both mobil
 - uuid: ^3.0.4
 - openidconnect_platform_interface: ^1.0.3 -->
 
+### Acknowledgement
+
+Parts of this package (under `lib/src/openid`) are derived from the `openid_client` (https://pub.dev/packages/openid_client) package, with custom modifications to support the Solid OIDC authentication flow. We would like to acknowledge and thank the authors of `openid_client` for their valuable work, which made these adaptations possible.
+
 ## Usage
 
 Fork the demo app in the `\example` directory into a local directory and open the `pubspec.yaml` file. Check whether the latest version of the package `solid_auth` is added under dependencies. Now run the following to get the necessary packages.
