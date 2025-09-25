@@ -80,6 +80,11 @@ DART_CODE=lib \
 	$(if $(wildcard test/),test) \
 	$(if $(wildcard integration_test/),integration_test)
 
+# Cater for the case where the support folder is one directory up.
+
+LOC := $(shell if [ -f support/loc.sh ]; then echo support/loc.sh; \
+       elif [ -f ../support/loc.sh ]; then echo ../support/loc.sh; fi)
+
 .PHONY: chrome
 chrome:
 	flutter run -d chrome --release
@@ -214,7 +219,7 @@ locmax:
 		| numfmt --grouping); \
 	numf=$$(find lib -name "*.dart" -type f | wc -l); \
 	output=$$(find lib -name "*.dart" -exec sh -c ' \
-		lines=$$(bash support/loc.sh "$$1"); \
+		lines=$$(bash $(LOC) "$$1"); \
 		if [ $$lines -gt $(LINES) ]; then \
 			printf "%4d %s\n" $$lines "$$1"; \
 		fi \
@@ -243,7 +248,7 @@ locmax-enforce:
 		| numfmt --grouping); \
 	numf=$$(find lib -name "*.dart" -type f | wc -l); \
 	output=$$(find lib -name "*.dart" -exec sh -c ' \
-		lines=$$(bash support/loc.sh "$$1"); \
+		lines=$$(bash $(LOC) "$$1"); \
 		if [ $$lines -gt $(LINES) ]; then \
 			printf "%4d %s\n" $$lines "$$1"; \
 		fi \
