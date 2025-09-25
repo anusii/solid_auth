@@ -1,17 +1,14 @@
 // Flutter imports:
 import 'package:flutter/material.dart';
 
-// Package imports:
-//import 'package:jwt_decoder/jwt_decoder.dart';
-//import 'package:websafe_svg/websafe_svg.dart';
+import 'package:solid_auth/solid_auth.dart';
 
+import 'package:solid_auth_example/components/Header.dart';
 // Project imports:
 import 'package:solid_auth_example/models/Constants.dart';
-import 'package:solid_auth_example/screens/ProfileInfo.dart';
-import 'package:solid_auth_example/components/Header.dart';
-import 'package:solid_auth_example/models/SolidApi.dart' as rest_api;
-import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth_example/models/GetRdfData.dart';
+import 'package:solid_auth_example/models/SolidApi.dart' as rest_api;
+import 'package:solid_auth_example/screens/ProfileInfo.dart';
 
 class PrivateProfile extends StatefulWidget {
   final Map authData; // Authentication data

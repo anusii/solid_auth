@@ -1,5 +1,6 @@
 // Dart imports:
 import 'dart:io';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Class to return platform information

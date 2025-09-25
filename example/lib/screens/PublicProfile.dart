@@ -1,13 +1,14 @@
 // Flutter imports:
 import 'package:flutter/material.dart';
 
-// Project imports:
-import 'package:solid_auth_example/models/Constants.dart';
-import 'package:solid_auth_example/components/Header.dart';
-import 'package:solid_auth_example/screens/ProfileInfo.dart';
 //import 'package:solid_auth_example/models/RestAPI.dart';
 import 'package:solid_auth/solid_auth.dart';
+
+import 'package:solid_auth_example/components/Header.dart';
+// Project imports:
+import 'package:solid_auth_example/models/Constants.dart';
 import 'package:solid_auth_example/models/GetRdfData.dart';
+import 'package:solid_auth_example/screens/ProfileInfo.dart';
 
 class PublicProfile extends StatefulWidget {
   final String webId;

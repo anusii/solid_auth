@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 //import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:solid_auth/solid_auth.dart';
 
+import 'package:solid_auth_example/components/Header.dart';
 // Project imports:
 import 'package:solid_auth_example/models/Constants.dart';
-import 'package:solid_auth_example/components/Header.dart';
 import 'package:solid_auth_example/models/SolidApi.dart';
 import 'package:solid_auth_example/screens/PrivateScreen.dart';
 
