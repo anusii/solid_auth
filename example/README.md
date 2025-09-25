@@ -40,7 +40,6 @@ following to get the necessary packages.
 flutter pub get
 ```
 
-
 ### Running the app on web or mobile
 
 After all the required packages are imported, then first select the
@@ -50,15 +49,15 @@ F5`.
 To access public data of a POD input the WebID into the text area and
 click `READ PUBLIC INFO` button.
 
-![](assets/images/public_data.gif")
+![public data](assets/images/public_data.gif")
 
 To login input the SOLID POD provider URL into the text area and click
 `LOGIN` button. After login you can edit the profile data.
 
-![](assets/images/login.gif)
+![login](assets/images/login.gif)
 
-![](assets/images/edit_data.gif)
+![edit data](assets/images/edit_data.gif)
 
 To logout simply click the `LOGOUT` button.
 
-![](assets/images/logout.gif)
+![logout](assets/images/logout.gif)
