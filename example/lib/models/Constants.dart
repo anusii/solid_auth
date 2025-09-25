@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 const darkGold = Color(0xFFBE830E);
 const brickRed = Color(0xFFD89E7A);
 const lightGold = Color(0xFFDBBA78);
-const lightBlue = Color(0xFF61B2CE);
 const exLightBlue = Color(0xFFD8ECF3);
 const darkCopper = Color(0xFFBE4E0E);
 const titleAsh = Color(0xFF30384D);
@@ -16,4 +15,4 @@ const bgOffWhite = Color(0xFFF2F4FC);
 const kDefaultPadding = 20.0;
 
 double screenWidth(BuildContext context) => MediaQuery.of(context).size.width;
-double screenHeight(BuildContext context) => MediaQuery.of(context).size.height;
+// double screenHeight(BuildContext context) => MediaQuery.of(context).size.height;
