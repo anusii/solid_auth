@@ -30,8 +30,8 @@ library;
 import 'package:openidconnect_web/openidconnect_web.dart';
 import 'package:web/web.dart' hide Client;
 
-import 'package:solid_auth/src/openid/openid_client_browser.dart';
 import 'package:solid_auth/src/auth_manager/auth_manager_abstract.dart';
+import 'package:solid_auth/src/openid/openid_client_browser.dart';
 
 late Window windowLoc;
 

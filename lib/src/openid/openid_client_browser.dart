@@ -23,11 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import 'dart:async';
 import 'dart:js_interop';
 
-import 'openid_client.dart';
 import 'package:web/web.dart' hide Credential, Client;
-import 'dart:async';
+
+import 'openid_client.dart';
+
 export 'openid_client.dart';
 
 /// A wrapper around [Flow] that handles the browser-specific parts of

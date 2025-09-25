@@ -27,8 +27,8 @@
 library openid_client.io;
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:developer';
+import 'dart:io';
 
 import 'openid_client.dart';
 

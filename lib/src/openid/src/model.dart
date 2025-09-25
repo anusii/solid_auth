@@ -28,9 +28,9 @@
 
 library openid.model;
 
-import 'package:jose/src/util.dart';
-import 'package:jose/jose.dart';
 import 'package:clock/clock.dart';
+import 'package:jose/jose.dart';
+import 'package:jose/src/util.dart';
 
 part 'model/metadata.dart';
 
