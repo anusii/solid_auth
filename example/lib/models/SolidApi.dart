@@ -1,8 +1,20 @@
 // Dart imports:
 import 'dart:async';
+import 'dart:math';
 
 // Package imports:
 import 'package:http/http.dart' as http;
+
+const _chars =
+    'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890_-';
+const _hexChars = '0123456789abcdef';
+Random _rnd = Random();
+
+String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
+    length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+
+String getRandomHex(int length) => String.fromCharCodes(Iterable.generate(
+    length, (_) => _hexChars.codeUnitAt(_rnd.nextInt(_hexChars.length))));
 
 // Get private profile information using access and dPoP tokens
 Future<String> fetchPrvProfile(

@@ -15,7 +15,11 @@ dependencies:
     path: ..
   url_launcher: ^6.3.1
 
-  http: any
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
 
 flutter:
   assets:
