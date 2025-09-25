@@ -9,14 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  cupertino_icons: ^1.0.1
-  dart_jsonwebtoken: ^3.2.0
-  fast_rsa: ^3.8.1
-  flutter_staggered_grid_view: ^0.7.0
-  flutter_svg: ^2.2.0
-  intl: ^0.20.2
-  jaguar_jwt: ^3.0.0
   jwt_decoder: ^2.0.1
   # solid_auth: ^0.1.6
   solid_auth:
@@ -24,11 +16,6 @@ dependencies:
   url_launcher: ^6.3.1
 
   http: any
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  integration_test:
-    sdk: flutter
 
 flutter:
   assets:
