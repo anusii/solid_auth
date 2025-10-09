@@ -33,13 +33,14 @@
 
 library;
 
-// Flutter imports:
-import 'dart:convert';
+// Dart imports
+// import 'dart:convert';
 
+// Flutter imports:
 import 'package:flutter/material.dart';
 
 import 'package:solid_auth/solid_auth.dart';
-import 'package:crypto/crypto.dart';
+// import 'package:crypto/crypto.dart';
 
 // Project imports:
 import 'package:solid_auth_example/components/Header.dart';
@@ -187,22 +188,26 @@ class _PrivateProfileState extends State<PrivateProfile> {
     String accessToken = authData['accessToken'];
     //Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken);
 
-    // Optional: If needed one can provide encoded access token to be included
+    // ----------------------------------------------
+    // Optional (uncomment following if needed):
+    // If needed one can provide encoded access token to be included
     // in the dPoP proof. Currently this is not required for any of our
     // community solid server configurations.
 
-    // Convert access token to ASCII bytes
-    // List<int> accesTokenBytes = utf8.encode(accessToken);
-    List<int> accesTokenBytes = accessToken.codeUnits;
+    // // Convert access token to ASCII bytes
+    // // List<int> accesTokenBytes = utf8.encode(accessToken);
+    // List<int> accesTokenBytes = accessToken.codeUnits;
 
-    // Hash using SHA-256
-    Digest hash = sha256.convert(accesTokenBytes);
+    // // Hash using SHA-256
+    // Digest hash = sha256.convert(accesTokenBytes);
 
-    // Convert hash to bytes for encoding
-    List<int> hashBytes = hash.bytes;
+    // // Convert hash to bytes for encoding
+    // List<int> hashBytes = hash.bytes;
 
-    // Base64URL encoding
-    String base64UrlHash = base64Url.encode(hashBytes);
+    // // Base64URL encoding
+    // String base64UrlHash = base64Url.encode(hashBytes);
+
+    // --------------------------------------------------
 
     // Get profile
     String profCardUrl = webId.replaceAll('#me', '');
