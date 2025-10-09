@@ -34,12 +34,15 @@
 library;
 
 // Flutter imports:
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import 'package:solid_auth/solid_auth.dart';
+import 'package:crypto/crypto.dart';
 
-import 'package:solid_auth_example/components/Header.dart';
 // Project imports:
+import 'package:solid_auth_example/components/Header.dart';
 import 'package:solid_auth_example/models/Constants.dart';
 import 'package:solid_auth_example/models/GetRdfData.dart';
 import 'package:solid_auth_example/models/SolidApi.dart' as rest_api;
@@ -184,10 +187,33 @@ class _PrivateProfileState extends State<PrivateProfile> {
     String accessToken = authData['accessToken'];
     //Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken);
 
+    // Optional: If needed one can provide encoded access token to be included
+    // in the dPoP proof. Currently this is not required for any of our
+    // community solid server configurations.
+
+    // Convert access token to ASCII bytes
+    // List<int> accesTokenBytes = utf8.encode(accessToken);
+    List<int> accesTokenBytes = accessToken.codeUnits;
+
+    // Hash using SHA-256
+    Digest hash = sha256.convert(accesTokenBytes);
+
+    // Convert hash to bytes for encoding
+    List<int> hashBytes = hash.bytes;
+
+    // Base64URL encoding
+    String base64UrlHash = base64Url.encode(hashBytes);
+
     // Get profile
     String profCardUrl = webId.replaceAll('#me', '');
-    String dPopToken =
-        genDpopToken(profCardUrl, rsaKeyPair, publicKeyJwk, 'GET');
+    String dPopToken = genDpopToken(
+      profCardUrl,
+      rsaKeyPair,
+      publicKeyJwk,
+      'GET',
+      // Optional parameter ath to provide encoded access token
+      // ath: base64UrlHash,
+    );
 
     return Scaffold(
       key: _scaffoldKey,

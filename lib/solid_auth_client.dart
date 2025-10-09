@@ -121,8 +121,10 @@ String genDpopToken(
   String endPointUrl,
   KeyPair rsaKeyPair,
   dynamic publicKeyJwk,
-  String httpMethod,
-) {
+  String httpMethod, {
+  String? ath,
+  String? nonce,
+}) {
   /// https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop-03
   /// Unique identifier for DPoP proof JWT
   /// Here we are using a version 4 UUID according to https://datatracker.ietf.org/doc/html/rfc4122
@@ -140,6 +142,14 @@ String genDpopToken(
     'jti': tokenId,
     'iat': (DateTime.now().millisecondsSinceEpoch / 1000).round(),
   };
+
+  if (ath != null) {
+    tokenBody['ath'] = ath;
+  }
+
+  if (nonce != null) {
+    tokenBody['nonce'] = nonce;
+  }
 
   /// Create a json web token
   final jwt = JWT(
@@ -226,8 +236,12 @@ Future<Map> authenticate(
   var publicKeyJwk = rsaResults['pubKeyJwk'];
 
   ///Generate DPoP token using the RSA private key
-  String dPopToken =
-      genDpopToken(tokenEndpoint, rsaKeyPair, publicKeyJwk, 'POST');
+  String dPopToken = genDpopToken(
+    tokenEndpoint,
+    rsaKeyPair,
+    publicKeyJwk,
+    'POST',
+  );
 
   final String clientId = regResJson['client_id'];
   final String clientSecret = regResJson['client_secret'];
