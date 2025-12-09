@@ -31,7 +31,9 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
+import 'package:web/web.dart' as web;
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fast_rsa/fast_rsa.dart';
@@ -162,6 +164,16 @@ Future<Map> authenticate(
   List<String> scopes,
   BuildContext context,
 ) async {
+  // On Web platform, immediately reload the page when authentication is triggered
+  // This ensures guest users see a fresh login screen
+  if (kIsWeb) {
+    await Future.delayed(const Duration(milliseconds: 50));
+    // Use conditional import for web reload
+    _reloadPageIfWeb();
+    // Code after reload won't execute, but return empty map just in case
+    return {};
+  }
+  
   /// Platform type parameter
   String platformType;
 
@@ -349,4 +361,11 @@ Future<bool> logout(logoutUrl) async {
     closeInAppWebView();
   }
   return true;
+}
+
+/// Helper function to reload page on web platform
+void _reloadPageIfWeb() {
+  if (kIsWeb) {
+    web.window.location.reload();
+  }
 }
