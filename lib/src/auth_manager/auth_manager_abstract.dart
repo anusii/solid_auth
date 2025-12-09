@@ -44,6 +44,7 @@ abstract class AuthManager {
   createAuthenticator(Client client, List<String> scopes, String dPopToken) {}
   getOidcWeb() {}
   userLogout(String logoutUrl) {}
+  clearLocalStorage() {}
 
   // factory constructor to return the correct implementation.
   factory AuthManager() => getAuthManager();

@@ -80,6 +80,15 @@ class WebAuthManager implements AuthManager {
     final child = window.open(logoutUrl, 'user_logout');
     child!.close();
   }
+
+  @override
+  clearLocalStorage() {
+    try {
+      windowLoc.localStorage.clear();
+    } catch (e) {
+      throw 'Failed to clear localStorage: $e';
+    }
+  }
 }
 
 AuthManager getAuthManager() => WebAuthManager();

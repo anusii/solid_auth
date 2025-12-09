@@ -321,6 +321,17 @@ Future<Map> authenticate(
 }
 
 Future<bool> logout(logoutUrl) async {
+  // Step 1: Clear web platform local storage before logout redirect
+  if (currPlatform.isWeb()) {
+    try {
+      authManager.clearLocalStorage();
+      debugPrint('logout() => Web localStorage cleared successfully');
+    } catch (e) {
+      debugPrint('logout() => Warning: Failed to clear localStorage: $e');
+      // Continue anyway - the important part is clearing auth data
+    }
+  }
+
   Uri url = Uri.parse(logoutUrl);
 
   if (await canLaunchUrl(url)) {
