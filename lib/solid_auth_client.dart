@@ -178,10 +178,12 @@ Future<Map> authenticate(
   /// Output data from the authentication
   Map authData;
 
-  /// Check the platform
-  if (currPlatform.isWeb()) {
+  /// Check the platform using PlatformInfo
+  final platformTypeEnum = currPlatform.getCurrentPlatformType();
+  if (platformTypeEnum == PlatformType.web) {
     platformType = 'web';
-  } else if (currPlatform.isAppOS()) {
+  } else if (platformTypeEnum == PlatformType.iOS ||
+      platformTypeEnum == PlatformType.android) {
     platformType = 'mobile';
   } else {
     platformType = 'desktop';
@@ -321,15 +323,12 @@ Future<Map> authenticate(
 }
 
 Future<bool> logout(logoutUrl) async {
-  // Step 1: Clear web platform local storage before logout redirect
-  if (currPlatform.isWeb()) {
-    try {
-      authManager.clearLocalStorage();
-      debugPrint('logout() => Web localStorage cleared successfully');
-    } catch (e) {
-      debugPrint('logout() => Warning: Failed to clear localStorage: $e');
-      // Continue anyway - the important part is clearing auth data
-    }
+  // Clear platform-specific storage (Web: localStorage, others: no-op)
+  try {
+    authManager.clearLocalStorage();
+  } catch (e) {
+    debugPrint('logout() => Warning: Failed to clear storage: $e');
+    // Continue anyway - the important part is clearing auth data
   }
 
   Uri url = Uri.parse(logoutUrl);
