@@ -178,12 +178,10 @@ Future<Map> authenticate(
   /// Output data from the authentication
   Map authData;
 
-  /// Check the platform using PlatformInfo
-  final platformTypeEnum = currPlatform.getCurrentPlatformType();
-  if (platformTypeEnum == PlatformType.web) {
+  /// Check the platform
+  if (currPlatform.isWeb()) {
     platformType = 'web';
-  } else if (platformTypeEnum == PlatformType.iOS ||
-      platformTypeEnum == PlatformType.android) {
+  } else if (currPlatform.isAppOS()) {
     platformType = 'mobile';
   } else {
     platformType = 'desktop';
