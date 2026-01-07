@@ -1,4 +1,4 @@
-/// Get Auth Manager
+/// Native Auth Manager for non-web platforms.
 ///
 /// Copyright (C) 2025, Software Innovation Institute, ANU.
 ///
@@ -27,7 +27,53 @@
 /// Authors: Anushka Vidanage
 library;
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solid_auth/src/auth_manager/auth_manager_abstract.dart';
-import 'package:solid_auth/src/auth_manager/native_auth_manager.dart';
+import 'package:solid_auth/src/openid/src/openid.dart';
+
+/// Auth manager implementation for native platforms (Linux, Windows, macOS, iOS, Android).
+///
+/// This provides platform-specific implementations using SharedPreferences
+/// for storage operations on native platforms.
+class NativeAuthManager implements AuthManager {
+  @override
+  String getKeyValue(String key) {
+    // Native platforms don't use localStorage
+    return '';
+  }
+
+  @override
+  getWebUrl() {
+    // Not applicable for native platforms
+    return null;
+  }
+
+  @override
+  createAuthenticator(Client client, List<String> scopes, String dPopToken) {
+    // Not applicable for native platforms
+    return null;
+  }
+
+  @override
+  getOidcWeb() {
+    // Not applicable for native platforms
+    return null;
+  }
+
+  @override
+  userLogout(String logoutUrl) {
+    // Native platforms handle logout through URL launcher, not window.open
+  }
+
+  @override
+  Future<void> clearLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (e) {
+      throw Exception('Failed to clear SharedPreferences: $e');
+    }
+  }
+}
 
 AuthManager getAuthManager() => NativeAuthManager();

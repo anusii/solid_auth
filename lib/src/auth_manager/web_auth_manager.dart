@@ -82,11 +82,11 @@ class WebAuthManager implements AuthManager {
   }
 
   @override
-  clearLocalStorage() {
+  Future<void> clearLocalStorage() async {
     try {
       windowLoc.localStorage.clear();
     } catch (e) {
-      throw 'Failed to clear localStorage: $e';
+      throw Exception('Failed to clear localStorage: $e');
     }
   }
 }

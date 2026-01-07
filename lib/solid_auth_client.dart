@@ -321,12 +321,12 @@ Future<Map> authenticate(
 }
 
 Future<bool> logout(logoutUrl) async {
-  // Clear platform-specific storage (Web: localStorage, others: no-op)
+  // Clear platform-specific storage (Web: localStorage, Native: SharedPreferences)
   try {
-    authManager.clearLocalStorage();
+    await authManager.clearLocalStorage();
   } catch (e) {
     debugPrint('logout() => Warning: Failed to clear storage: $e');
-    // Continue anyway - the important part is clearing auth data
+    // Continue with logout flow even if storage clearing fails
   }
 
   Uri url = Uri.parse(logoutUrl);
