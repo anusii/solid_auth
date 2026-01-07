@@ -338,7 +338,7 @@ Future<bool> logout(logoutUrl) async {
     throw 'Could not launch $url';
   }
 
-  await Future.delayed(Duration(seconds: 4));
+  await Future.delayed(const Duration(seconds: 4));
 
   /// closing web view function does not work in Windows applications
   if (currPlatform.isAppOS()) {

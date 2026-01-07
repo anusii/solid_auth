@@ -38,6 +38,8 @@ import 'package:pointycastle/digests/sha256.dart';
 
 import 'http_util.dart' as http;
 import 'model.dart';
+import 'openid_exception.dart';
+import 'scopes.dart';
 
 export 'model.dart';
 export 'http_util.dart' show HttpRequestException;
@@ -88,51 +90,7 @@ class Issuer {
         'userinfo_endpoint': 'https://graph.facebook.com/v2.8/879023912133394',
         'response_types_supported': ['token', 'code', 'code token'],
         'token_endpoint_auth_methods_supported': ['client_secret_post'],
-        'scopes_supported': [
-          'public_profile',
-          'user_friends',
-          'email',
-          'user_about_me',
-          'user_actions.books',
-          'user_actions.fitness',
-          'user_actions.music',
-          'user_actions.news',
-          'user_actions.video',
-          'user_birthday',
-          'user_education_history',
-          'user_events',
-          'user_games_activity',
-          'user_hometown',
-          'user_likes',
-          'user_location',
-          'user_managed_groups',
-          'user_photos',
-          'user_posts',
-          'user_relationships',
-          'user_relationship_details',
-          'user_religion_politics',
-          'user_tagged_places',
-          'user_videos',
-          'user_website',
-          'user_work_history',
-          'read_custom_friendlists',
-          'read_insights',
-          'read_audience_network_insights',
-          'read_page_mailboxes',
-          'manage_pages',
-          'publish_pages',
-          'publish_actions',
-          'rsvp_event',
-          'pages_show_list',
-          'pages_manage_cta',
-          'pages_manage_instant_articles',
-          'ads_read',
-          'ads_management',
-          'business_management',
-          'pages_messaging',
-          'pages_messaging_subscriptions',
-          'pages_messaging_phone_number',
-        ],
+        'scopes_supported': supportedScopes,
       }),
     ),
     google: null,
@@ -432,7 +390,7 @@ extension _IssuerX on Issuer {
   Uri get tokenEndpoint {
     var endpoint = metadata.tokenEndpoint;
     if (endpoint == null) {
-      throw OpenIdException.missingTokenEndpoint();
+      throw const OpenIdException.missingTokenEndpoint();
     }
     return endpoint;
   }
@@ -769,83 +727,4 @@ String _randomString(int length) {
   var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   return Iterable.generate(length, (_) => chars[r.nextInt(chars.length)])
       .join();
-}
-
-/// An exception thrown when a response is received in the openid error format.
-class OpenIdException implements Exception {
-  /// An error code
-  final String? code;
-
-  /// Human-readable text description of the error.
-  final String? message;
-
-  /// A URI identifying a human-readable web page with information about the
-  /// error, used to provide the client developer with additional information
-  /// about the error.
-  final String? uri;
-
-  static const _defaultMessages = {
-    'duplicate_requests':
-        'The Client sent simultaneous requests to the User Questioning Polling Endpoint for the same question_id. This error is responded to oldest requests. The last request is processed normally.',
-    'forbidden':
-        'The Client sent a request to the User Questioning Polling Endpoint whereas it is configured with a client_notification_endpoint.',
-    'high_rate_client':
-        'The Client sent requests at a too high rate, amongst all question_id. Information about the allowed and recommended rates can be included in the error_description.',
-    'high_rate_question':
-        'The Client sent requests at a too high rate for a given question_id. Information about the allowed and recommended rates can be included in the error_description.',
-    'invalid_question_id':
-        'The Client sent a request to the User Questioning Polling Endpoint for a question_id that does not exist or is not valid for the requesting Client.',
-    'invalid_request':
-        'The User Questioning Request is not valid. The request is missing a required parameter, includes an unsupported parameter value (other than grant type), repeats a parameter, includes multiple credentials, utilizes more than one mechanism for authenticating the client, or is otherwise malformed.',
-    'no_suitable_method':
-        'There is no Questioning Method suitable with the User Questioning Request. The OP can use this error code when it does not implement mechanisms suitable for the wished AMR or ACR.',
-    'timeout':
-        'The Questioned User did not answer in the allowed period of time.',
-    'unauthorized':
-        'The Client is not authorized to use the User Questioning API or did not send a valid Access Token.',
-    'unknown_user':
-        'The Questioned User mentioned in the user_id attribute of the User Questioning Request is unknown.',
-    'unreachable_user':
-        'The Questioned User mentioned in the User Questioning Request (either in the Access Token or in the user_id attribute) is unreachable. The OP can use this error when it does not have a reachability identifier (e.g. MSISDN) for the Question User or when the reachability identifier is not operational (e.g. unsubscribed MSISDN).',
-    'user_refused_to_answer':
-        'The Questioned User refused to make a statement to the question.',
-    'interaction_required':
-        'The Authorization Server requires End-User interaction of some form to proceed. This error MAY be returned when the prompt parameter value in the Authentication Request is none, but the Authentication Request cannot be completed without displaying a user interface for End-User interaction.',
-    'login_required':
-        'The Authorization Server requires End-User authentication. This error MAY be returned when the prompt parameter value in the Authentication Request is none, but the Authentication Request cannot be completed without displaying a user interface for End-User authentication.',
-    'account_selection_required':
-        'The End-User is REQUIRED to select a session at the Authorization Server. The End-User MAY be authenticated at the Authorization Server with different associated accounts, but the End-User did not select a session. This error MAY be returned when the prompt parameter value in the Authentication Request is none, but the Authentication Request cannot be completed without displaying a user interface to prompt for a session to use.',
-    'consent_required':
-        'The Authorization Server requires End-User consent. This error MAY be returned when the prompt parameter value in the Authentication Request is none, but the Authentication Request cannot be completed without displaying a user interface for End-User consent.',
-    'invalid_request_uri':
-        'The request_uri in the Authorization Request returns an error or contains invalid data.',
-    'invalid_request_object':
-        'The request parameter contains an invalid Request Object.',
-    'request_not_supported':
-        'The OP does not support use of the request parameter',
-    'request_uri_not_supported':
-        'The OP does not support use of the request_uri parameter',
-    'registration_not_supported':
-        'The OP does not support use of the registration parameter',
-    'invalid_redirect_uri':
-        'The value of one or more redirect_uris is invalid.',
-    'invalid_client_metadata':
-        'The value of one of the Client Metadata fields is invalid and the server has rejected this request. Note that an Authorization Server MAY choose to substitute a valid value for any requested parameter of a Client\'s Metadata.',
-  };
-
-  /// Thrown when trying to get a token, but the token endpoint is missing from
-  /// the issuer metadata
-  const OpenIdException.missingTokenEndpoint()
-      : this._(
-          'missing_token_endpoint',
-          'The issuer metadata does not contain a token endpoint.',
-        );
-
-  const OpenIdException._(this.code, this.message) : uri = null;
-
-  OpenIdException(this.code, String? message, [this.uri])
-      : message = message ?? _defaultMessages[code!];
-
-  @override
-  String toString() => 'OpenIdException($code): $message';
 }

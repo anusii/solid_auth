@@ -7,11 +7,11 @@
         const AUTH_RESPONSE_KEY = "openidconnect_auth_response_info";
 
         window.onload = function () {
-            if (window.opener && window.opener !== window) { //Used when working as a popup. Uses post message to respond to the parent window                
+            if (window.opener && window.opener !== window) { //Used when working as a popup. Uses post message to respond to the parent window
                 var parent = window.opener ?? window.parent;
                 parent.postMessage(location.href, "*");
-            } else { //Used for redirect loop functionality.                
-                //Get the original page destination                
+            } else { //Used for redirect loop functionality.
+                //Get the original page destination
                 const destination = sessionStorage.getItem(AUTH_DESTINATION_KEY || "/");
                 sessionStorage.removeItem(AUTH_DESTINATION_KEY);
                 //Store the current window location that will be used to get the information for authentication

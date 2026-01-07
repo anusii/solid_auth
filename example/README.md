@@ -49,7 +49,7 @@ F5`.
 To access public data of a POD input the WebID into the text area and
 click `READ PUBLIC INFO` button.
 
-![public data](assets/images/public_data.gif")
+![public data](assets/images/public_data.gif)
 
 To login input the SOLID POD provider URL into the text area and click
 `LOGIN` button. After login you can edit the profile data.

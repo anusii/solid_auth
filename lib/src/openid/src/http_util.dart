@@ -30,6 +30,7 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 
 import '../openid_client.dart';
+import 'openid_exception.dart';
 
 export 'package:http/http.dart' show Client;
 
@@ -70,7 +71,7 @@ dynamic _processResponse(http.Response response) {
   var contentType = response.headers.entries
       .firstWhere(
         (v) => v.key.toLowerCase() == 'content-type',
-        orElse: () => MapEntry('', ''),
+        orElse: () => const MapEntry('', ''),
       )
       .value;
   var isJson = contentType.split(';').first == 'application/json';
