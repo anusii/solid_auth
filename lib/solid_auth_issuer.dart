@@ -32,11 +32,42 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
-/// Get POD issuer URI
+/// In-memory cache: maps a server URL / WebID to its resolved OIDC issuer URI.
+/// The issuer URI for a given Solid server never changes at runtime, so a
+/// simple process-lifetime cache is safe and avoids repeated HTTP round-trips.
+final Map<String, String> _issuerCache = {};
+
+/// Profile-body cache: maps the plain profile card URL (fragment stripped) to
+/// the Turtle body fetched during [getIssuer].
+///
+/// When the user enters a WebID URL such as `https://example.org/profile/card#me`,
+/// [getIssuer] must fetch the profile document to extract the OIDC issuer URI.
+/// The same document is needed again after authentication to populate profile
+/// data. Caching it here avoids a redundant (second) HTTP round-trip.
+final Map<String, String> _profileBodyCache = {};
+
+/// Returns the profile card body that was fetched during [getIssuer], or `null`
+/// if the profile has not been fetched yet (e.g. the server URL is a plain
+/// issuer URI rather than a WebID URL).
+String? getCachedIssuerProfileBody(String profUrl) =>
+    _profileBodyCache[profUrl];
+
+/// Get POD issuer URI.
+///
+/// Results are cached in memory so that repeated calls for the same [textUrl]
+/// (e.g. when the user logs out and back in) skip the network look-up.
 Future<String> getIssuer(String textUrl) async {
+  // Return cached result immediately when available.
+  if (_issuerCache.containsKey(textUrl)) {
+    return _issuerCache[textUrl]!;
+  }
+
   String issuerUri = '';
   if (textUrl.contains('profile/card#me')) {
     String pubProf = await fetchProfileData(textUrl);
+    // Cache the profile body under the plain URL (without #me fragment).
+    // authenticate.dart can reuse this to skip a second HTTP GET.
+    _profileBodyCache[textUrl.replaceAll('#me', '')] = pubProf;
     issuerUri = getIssuerUri(pubProf);
   }
 
@@ -48,6 +79,11 @@ Future<String> getIssuer(String textUrl) async {
       issuerUri = textUrl.substring(match.start, match.end);
     }
   }
+
+  if (issuerUri.isNotEmpty) {
+    _issuerCache[textUrl] = issuerUri;
+  }
+
   return issuerUri;
 }
 
