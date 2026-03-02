@@ -28,6 +28,7 @@
 library;
 
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:solid_auth/src/auth_manager/auth_manager_abstract.dart';
 import 'package:solid_auth/src/openid/src/openid.dart';
 
