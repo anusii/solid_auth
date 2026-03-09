@@ -85,6 +85,7 @@ Future<String> getIssuer(String textUrl) async {
   final String cacheKey = Uri.parse(textUrl).toString();
 
   // Return cached result immediately when available.
+
   if (_issuerCache.containsKey(cacheKey)) {
     return _issuerCache[cacheKey]!;
   }
@@ -96,6 +97,7 @@ Future<String> getIssuer(String textUrl) async {
     // Cache the profile body under the plain profile document URL (fragment
     // stripped). solidpod/authenticate.dart can reuse this to skip a second
     // HTTP GET.
+
     _profileBodyCache[_normalizeProfileUrl(textUrl)] = pubProf;
     issuerUri = getIssuerUri(pubProf);
   }
