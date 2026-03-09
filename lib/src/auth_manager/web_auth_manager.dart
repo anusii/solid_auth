@@ -58,8 +58,11 @@ class WebAuthManager implements AuthManager {
     List<String> scopes,
     String dPopToken,
   ) {
-    var authenticator =
-        Authenticator(client, scopes: scopes, popToken: dPopToken);
+    var authenticator = Authenticator(
+      client,
+      scopes: scopes,
+      popToken: dPopToken,
+    );
     return authenticator;
   }
 

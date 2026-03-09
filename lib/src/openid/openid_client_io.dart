@@ -72,13 +72,13 @@ class Authenticator {
     String? redirectMessage,
     this.htmlPage,
     this.popToken = '',
-  })  : assert(
-          htmlPage != null ? redirectMessage == null : true,
-          'You can only use one variable htmlPage (give entire html) or redirectMessage (only string message)',
-        ),
-        redirectMessage = redirectMessage ?? 'You can now close this window',
-        port = flow.redirectUri.port,
-        urlLancher = urlLancher ?? _runBrowser;
+  }) : assert(
+         htmlPage != null ? redirectMessage == null : true,
+         'You can only use one variable htmlPage (give entire html) or redirectMessage (only string message)',
+       ),
+       redirectMessage = redirectMessage ?? 'You can now close this window',
+       port = flow.redirectUri.port,
+       urlLancher = urlLancher ?? _runBrowser;
 
   /// Creates an authenticator that uses a [Flow.authorizationCodeWithPKCE] flow
   /// when [redirectUri] is null and a [Flow.authorizationCode] flow otherwise.
@@ -93,25 +93,26 @@ class Authenticator {
     String? prompt,
     Map<String, String>? additionalParameters,
     this.htmlPage,
-  })  : assert(
-          htmlPage != null ? redirectMessage == null : true,
-          'You can only use one variable htmlPage (give entire html) or redirectMessage (only string message)',
-        ),
-        redirectMessage = redirectMessage ?? 'You can now close this window',
-        flow = redirectUri == null
-            ? Flow.authorizationCode(
-                client,
-                prompt: prompt,
-                additionalParameters: additionalParameters,
-              )
-            : Flow.authorizationCodeWithPKCE(
-                client,
-                prompt: prompt,
-                additionalParameters: additionalParameters,
-              )
-          ..scopes.addAll(scopes)
-          ..redirectUri = redirectUri ?? Uri.parse('http://localhost:$port/')
-          ..dPoPToken = popToken;
+  }) : assert(
+         htmlPage != null ? redirectMessage == null : true,
+         'You can only use one variable htmlPage (give entire html) or redirectMessage (only string message)',
+       ),
+       redirectMessage = redirectMessage ?? 'You can now close this window',
+       flow =
+           redirectUri == null
+                 ? Flow.authorizationCode(
+                     client,
+                     prompt: prompt,
+                     additionalParameters: additionalParameters,
+                   )
+                 : Flow.authorizationCodeWithPKCE(
+                     client,
+                     prompt: prompt,
+                     additionalParameters: additionalParameters,
+                   )
+             ..scopes.addAll(scopes)
+             ..redirectUri = redirectUri ?? Uri.parse('http://localhost:$port/')
+             ..dPoPToken = popToken;
 
   /// Starts the authentication flow.
   ///

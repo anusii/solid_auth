@@ -55,9 +55,7 @@ Future<String> getIssuer(String textUrl) async {
 Future<String> fetchProfileData(String profUrl) async {
   final response = await http.get(
     Uri.parse(profUrl),
-    headers: <String, String>{
-      'Content-Type': 'text/turtle',
-    },
+    headers: <String, String>{'Content-Type': 'text/turtle'},
   );
 
   if (response.statusCode == 200) {

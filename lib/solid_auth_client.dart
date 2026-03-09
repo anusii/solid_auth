@@ -142,10 +142,7 @@ String genDpopToken(
   };
 
   /// Create a json web token
-  final jwt = JWT(
-    tokenBody,
-    header: tokenHead,
-  );
+  final jwt = JWT(tokenBody, header: tokenHead);
 
   /// Sign the JWT using private key
   var dpopToken = jwt.sign(
@@ -214,8 +211,12 @@ Future<Map> authenticate(
   }
 
   /// Dynamic registration of the client (our app)
-  var regResponse =
-      await clientDynamicReg(regEndpoint, redirUriList, authMethod, scopes);
+  var regResponse = await clientDynamicReg(
+    regEndpoint,
+    redirUriList,
+    authMethod,
+    scopes,
+  );
 
   /// Decode the registration details
   var regResJson = jsonDecode(regResponse);
@@ -226,8 +227,12 @@ Future<Map> authenticate(
   var publicKeyJwk = rsaResults['pubKeyJwk'];
 
   ///Generate DPoP token using the RSA private key
-  String dPopToken =
-      genDpopToken(tokenEndpoint, rsaKeyPair, publicKeyJwk, 'POST');
+  String dPopToken = genDpopToken(
+    tokenEndpoint,
+    rsaKeyPair,
+    publicKeyJwk,
+    'POST',
+  );
 
   final String clientId = regResJson['client_id'];
   final String clientSecret = regResJson['client_secret'];
@@ -266,8 +271,11 @@ Future<Map> authenticate(
     }
   } else {
     ///create an authenticator
-    var authenticator =
-        authManager.createAuthenticator(client, scopes, dPopToken);
+    var authenticator = authManager.createAuthenticator(
+      client,
+      scopes,
+      dPopToken,
+    );
 
     var oidc = authManager.getOidcWeb();
 

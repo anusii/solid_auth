@@ -90,15 +90,15 @@ class OpenIdException implements Exception {
   /// Thrown when trying to get a token, but the token endpoint is missing from
   /// the issuer metadata
   const OpenIdException.missingTokenEndpoint()
-      : this._(
-          'missing_token_endpoint',
-          'The issuer metadata does not contain a token endpoint.',
-        );
+    : this._(
+        'missing_token_endpoint',
+        'The issuer metadata does not contain a token endpoint.',
+      );
 
   const OpenIdException._(this.code, this.message) : uri = null;
 
   OpenIdException(this.code, String? message, [this.uri])
-      : message = message ?? _defaultMessages[code!];
+    : message = message ?? _defaultMessages[code!];
 
   @override
   String toString() => 'OpenIdException($code): $message';

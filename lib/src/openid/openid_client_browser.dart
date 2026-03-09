@@ -78,18 +78,18 @@ class Authenticator {
     Iterable<String> scopes = const [],
     popToken = '',
   }) : this._(
-          Flow.authorizationCodeWithPKCE(
-            client,
-            state: window.localStorage.getItem('openid_client:state'),
-          )
-            ..scopes.addAll(scopes)
-            ..redirectUri = Uri.parse(
-              window.location.href.contains('#/')
-                  ? window.location.href.replaceAll('#/', 'callback.html')
-                  : '${window.location.href}callback.html',
-            ).removeFragment()
-            ..dPoPToken = popToken,
-        );
+         Flow.authorizationCodeWithPKCE(
+             client,
+             state: window.localStorage.getItem('openid_client:state'),
+           )
+           ..scopes.addAll(scopes)
+           ..redirectUri = Uri.parse(
+             window.location.href.contains('#/')
+                 ? window.location.href.replaceAll('#/', 'callback.html')
+                 : '${window.location.href}callback.html',
+           ).removeFragment()
+           ..dPoPToken = popToken,
+       );
 
   /// Redirects the browser to the authentication URI.
   void authorize() {
@@ -152,18 +152,22 @@ class Authenticator {
     var iframe = HTMLIFrameElement();
     var url = flow.authenticationUri;
     window.localStorage.setItem('openid_client:state', flow.state);
-    iframe.src = url.replace(
-      queryParameters: {
-        ...url.queryParameters,
-        'prompt': 'none',
-        'redirect_uri': flow.redirectUri.replace(
+    iframe.src = url
+        .replace(
           queryParameters: {
-            ...flow.redirectUri.queryParameters,
-            'iframe': 'true',
+            ...url.queryParameters,
+            'prompt': 'none',
+            'redirect_uri': flow.redirectUri
+                .replace(
+                  queryParameters: {
+                    ...flow.redirectUri.queryParameters,
+                    'iframe': 'true',
+                  },
+                )
+                .toString(),
           },
-        ).toString(),
-      },
-    ).toString();
+        )
+        .toString();
     iframe.style.display = 'none';
     document.body!.append(iframe);
     var event = await window.onMessage.first.timeout(timeout).whenComplete(() {
