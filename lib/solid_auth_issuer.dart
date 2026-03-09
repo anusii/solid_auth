@@ -35,6 +35,7 @@ import 'package:http/http.dart' as http;
 /// In-memory cache: maps a server URL / WebID to its resolved OIDC issuer URI.
 /// The issuer URI for a given Solid server never changes at runtime, so a
 /// simple process-lifetime cache is safe and avoids repeated HTTP round-trips.
+
 final Map<String, String> _issuerCache = {};
 
 /// Profile-body cache: maps the plain profile card URL (fragment stripped) to
@@ -44,11 +45,13 @@ final Map<String, String> _issuerCache = {};
 /// [getIssuer] must fetch the profile document to extract the OIDC issuer URI.
 /// The same document is needed again after authentication to populate profile
 /// data. Caching it here avoids a redundant (second) HTTP round-trip.
+
 final Map<String, String> _profileBodyCache = {};
 
 /// Returns the profile card body that was fetched during [getIssuer], or `null`
 /// if the profile has not been fetched yet (e.g. the server URL is a plain
 /// issuer URI rather than a WebID URL).
+
 String? getCachedIssuerProfileBody(String profUrl) =>
     _profileBodyCache[profUrl];
 
@@ -56,6 +59,7 @@ String? getCachedIssuerProfileBody(String profUrl) =>
 ///
 /// Results are cached in memory so that repeated calls for the same [textUrl]
 /// (e.g. when the user logs out and back in) skip the network look-up.
+
 Future<String> getIssuer(String textUrl) async {
   // Return cached result immediately when available.
   if (_issuerCache.containsKey(textUrl)) {
@@ -65,14 +69,16 @@ Future<String> getIssuer(String textUrl) async {
   String issuerUri = '';
   if (textUrl.contains('profile/card#me')) {
     String pubProf = await fetchProfileData(textUrl);
+
     // Cache the profile body under the plain URL (without #me fragment).
     // authenticate.dart can reuse this to skip a second HTTP GET.
+
     _profileBodyCache[textUrl.replaceAll('#me', '')] = pubProf;
     issuerUri = getIssuerUri(pubProf);
   }
 
   if (issuerUri == '') {
-    /// This reg expression works with localhost and other urls
+    /// This reg expression works with localhost and other urls.
     RegExp exp = RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+(\.|\:)[\w\.]+');
     Iterable<RegExpMatch> matches = exp.allMatches(textUrl);
     for (var match in matches) {
@@ -87,7 +93,8 @@ Future<String> getIssuer(String textUrl) async {
   return issuerUri;
 }
 
-/// Get public profile information from webId
+/// Get public profile information from webId.
+
 Future<String> fetchProfileData(String profUrl) async {
   final response = await http.get(
     Uri.parse(profUrl),
@@ -107,7 +114,8 @@ Future<String> fetchProfileData(String profUrl) async {
   }
 }
 
-/// Read public profile RDF file and get the issuer URI
+/// Read public profile RDF file and get the issuer URI.
+
 String getIssuerUri(String profileRdfStr) {
   String issuerUri = '';
   var profileDataList = profileRdfStr.split('\n');
