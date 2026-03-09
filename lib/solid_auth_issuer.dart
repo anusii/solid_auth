@@ -48,12 +48,31 @@ final Map<String, String> _issuerCache = {};
 
 final Map<String, String> _profileBodyCache = {};
 
+/// Strips any URI fragment (e.g. `#me`) from [profUrl] so that cache keys are
+/// canonical regardless of whether the caller includes a fragment.
+
+String _normalizeProfileUrl(String profUrl) {
+  final int hashIndex = profUrl.indexOf('#');
+  return hashIndex == -1 ? profUrl : profUrl.substring(0, hashIndex);
+}
+
 /// Returns the profile card body that was fetched during [getIssuer], or `null`
 /// if the profile has not been fetched yet (e.g. the server URL is a plain
 /// issuer URI rather than a WebID URL).
 
+/// The [profUrl] fragment (if any) is stripped before the look-up so callers
+/// may pass either the bare document URL or a full WebID URL.
+
 String? getCachedIssuerProfileBody(String profUrl) =>
-    _profileBodyCache[profUrl];
+    _profileBodyCache[_normalizeProfileUrl(profUrl)];
+
+/// Clears both in-memory caches.
+/// Useful in tests or whenever server configuration may have changed.
+ 
+void clearIssuerCaches() {
+  _issuerCache.clear();
+  _profileBodyCache.clear();
+}
 
 /// Get POD issuer URI.
 ///
@@ -61,19 +80,23 @@ String? getCachedIssuerProfileBody(String profUrl) =>
 /// (e.g. when the user logs out and back in) skip the network look-up.
 
 Future<String> getIssuer(String textUrl) async {
+  // Normalize the key so that trivially different representations of the same
+  // URL (e.g. percent-encoding variants) share a single cache entry.
+  final String cacheKey = Uri.parse(textUrl).toString();
+
   // Return cached result immediately when available.
-  if (_issuerCache.containsKey(textUrl)) {
-    return _issuerCache[textUrl]!;
+  if (_issuerCache.containsKey(cacheKey)) {
+    return _issuerCache[cacheKey]!;
   }
 
   String issuerUri = '';
   if (textUrl.contains('profile/card#me')) {
     String pubProf = await fetchProfileData(textUrl);
 
-    // Cache the profile body under the plain URL (without #me fragment).
-    // authenticate.dart can reuse this to skip a second HTTP GET.
-
-    _profileBodyCache[textUrl.replaceAll('#me', '')] = pubProf;
+    // Cache the profile body under the plain profile document URL (fragment
+    // stripped). solidpod/authenticate.dart can reuse this to skip a second
+    // HTTP GET.
+    _profileBodyCache[_normalizeProfileUrl(textUrl)] = pubProf;
     issuerUri = getIssuerUri(pubProf);
   }
 
@@ -87,7 +110,7 @@ Future<String> getIssuer(String textUrl) async {
   }
 
   if (issuerUri.isNotEmpty) {
-    _issuerCache[textUrl] = issuerUri;
+    _issuerCache[cacheKey] = issuerUri;
   }
 
   return issuerUri;
