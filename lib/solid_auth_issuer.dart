@@ -59,7 +59,7 @@ String _normalizeProfileUrl(String profUrl) {
 /// Returns the profile card body that was fetched during [getIssuer], or `null`
 /// if the profile has not been fetched yet (e.g. the server URL is a plain
 /// issuer URI rather than a WebID URL).
-
+///
 /// The [profUrl] fragment (if any) is stripped before the look-up so callers
 /// may pass either the bare document URL or a full WebID URL.
 
