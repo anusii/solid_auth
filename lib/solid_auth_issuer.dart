@@ -80,9 +80,15 @@ void clearIssuerCaches() {
 /// (e.g. when the user logs out and back in) skip the network look-up.
 
 Future<String> getIssuer(String textUrl) async {
+  // Trim leading/trailing whitespace defensively so that solid_auth behaves
+  // correctly regardless of whether the caller has already sanitised the input.
+  final String trimmed = textUrl.trim();
+
   // Normalize the key so that trivially different representations of the same
   // URL (e.g. percent-encoding variants) share a single cache entry.
-  final String cacheKey = Uri.parse(textUrl).toString();
+  // Uri.tryParse is used instead of Uri.parse to avoid a FormatException for
+  // malformed inputs; fall back to the trimmed string if parsing fails.
+  final String cacheKey = Uri.tryParse(trimmed)?.toString() ?? trimmed;
 
   // Return cached result immediately when available.
 
@@ -91,23 +97,23 @@ Future<String> getIssuer(String textUrl) async {
   }
 
   String issuerUri = '';
-  if (textUrl.contains('profile/card#me')) {
-    String pubProf = await fetchProfileData(textUrl);
+  if (trimmed.contains('profile/card#me')) {
+    String pubProf = await fetchProfileData(trimmed);
 
     // Cache the profile body under the plain profile document URL (fragment
     // stripped). solidpod/authenticate.dart can reuse this to skip a second
     // HTTP GET.
 
-    _profileBodyCache[_normalizeProfileUrl(textUrl)] = pubProf;
+    _profileBodyCache[_normalizeProfileUrl(trimmed)] = pubProf;
     issuerUri = getIssuerUri(pubProf);
   }
 
   if (issuerUri == '') {
     /// This reg expression works with localhost and other urls.
     RegExp exp = RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+(\.|\:)[\w\.]+');
-    Iterable<RegExpMatch> matches = exp.allMatches(textUrl);
+    Iterable<RegExpMatch> matches = exp.allMatches(trimmed);
     for (var match in matches) {
-      issuerUri = textUrl.substring(match.start, match.end);
+      issuerUri = trimmed.substring(match.start, match.end);
     }
   }
 
