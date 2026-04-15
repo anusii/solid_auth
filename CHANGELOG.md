@@ -9,6 +9,7 @@ utilised by the flutter version_widget package.
 
 ## 0.2 Stability
 
++ Update jose dependency [0.1.29 20260415 jesscmoore]
 + Review and cleanup for publication [0.1.28 20250925 gjw]
 + Remove jwt, update openid, use encrypt_plus [0.1.28 20250923 anushkavidanage]
 + Export openid_client [0.1.28 20250917 anushkavidanage]
