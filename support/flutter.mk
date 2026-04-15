@@ -48,8 +48,8 @@ flutter:
 
   test	    	  Run flutter testing.
   itest	    	  Run flutter interation testing.
-  qtest	   	  Run above test with PAUSE=0.
-    qtest.all	  Run qtest with output redirected - good running all tests.
+  qtest_detail    Run above test with PAUSE=0
+    qtest	  Run qtest with output redirected - good running all tests.
   coverage  	  Run with `--coverage`.
     coview  	  View the generated html coverage in browser.
 
@@ -69,6 +69,8 @@ flutter:
   publish   Publish a package to pub.dev
 
   scripts   Synchronise scripts
+
+  icons
 
 Also supported:
 
@@ -151,7 +153,7 @@ linux_config:
 
 .PHONY: prep
 prep: versions analyze fix import_order_fix format dcm ignore license todo locgo markdown lychee depend bakfind
-	@echo "ADVISORY: make test tests docs"
+	@echo "ADVISORY: make test qtest docs"
 	@echo $(SEPARATOR)
 
 .PHONY: docs
@@ -183,7 +185,7 @@ fix:
 .PHONY: format
 format:
 	@echo "Dart: FORMAT"
-	dart format lib/ $(if $(shell test -d example && echo yes),example/)
+	dart format lib/ $(if $(shell test -d example && echo yes),example/) $(if $(shell test -d test && echo yes),test/) $(if $(shell test -d integration_test && echo yes),integration_test/)
 	@echo $(SEPARATOR)
 
 # My emacs IDE is starting to add imports of backups automagically!
@@ -361,8 +363,8 @@ itest:
 # For the quick tests we do not INTERACT at all. The aim is to quickly
 # test all functionality.
 
-.PHONY: qtest
-qtest:
+.PHONY: qtest_detail
+qtest_detail:
 	@case "$$(uname -s)" in \
 		Linux*) device_id="linux" ;; \
 		Darwin*) device_id="macos" ;; \
@@ -391,14 +393,14 @@ qtest:
 	esac; \
 	flutter test --dart-define=INTERACT=0 --device-id $$device_id --reporter failures-only integration_test/$*.dart 2>/dev/null
 
-.PHONY: qtest.all
-qtest.all:
+.PHONY: qtest
+qtest:
 	@echo $(APP) `egrep '^version: ' pubspec.yaml`
 	@echo "flutter version:" `flutter --version | head -1 | cut -d ' ' -f 2`
-	make qtest > qtest_$(shell date +%Y%m%d%H%M%S).txt
+	make qtest_detail > ignore/qtest_$(shell date +%Y%m%d%H%M%S).txt
 
 clean::
-	rm -f qtest_*.txt
+	rm -f ignore/qtest_*.txt
 
 .PHONY: atest
 atest:
@@ -559,3 +561,8 @@ solidcommunity:
 	--exclude .dart_tool --exclude build --exclude ios --exclude macos \
 	--exclude linux --exclude windows --exclude android
 	ssh solidcommunity.au '(cd projects/$(APP); flutter upgrade; make prod)'
+
+.PHONY: icons
+icons:
+	cp assets/images/app_icon.png snap/gui/icon.png
+	dart run flutter_launcher_icons
