@@ -52,19 +52,18 @@ class TokenResponse extends JsonObject {
   DateTime? get expiresAt => getTyped('expires_at');
 
   TokenResponse.fromJson(Map<String, dynamic> json)
-    : super.from({
-        if (json['expires_in'] != null && json['expires_at'] == null)
-          'expires_at':
-              DateTime.now()
-                  .add(
-                    Duration(
-                      seconds: json['expires_in'] is String
-                          ? int.parse(json['expires_in'])
-                          : json['expires_in'],
-                    ),
-                  )
-                  .millisecondsSinceEpoch ~/
-              1000,
-        ...json,
-      });
+      : super.from({
+          if (json['expires_in'] != null && json['expires_at'] == null)
+            'expires_at': DateTime.now()
+                    .add(
+                      Duration(
+                        seconds: json['expires_in'] is String
+                            ? int.parse(json['expires_in'])
+                            : json['expires_in'],
+                      ),
+                    )
+                    .millisecondsSinceEpoch ~/
+                1000,
+          ...json,
+        });
 }

@@ -55,9 +55,9 @@ class Issuer {
 
   /// Creates an issuer from its metadata.
   Issuer(this.metadata, {this.claimsMap = const {}})
-    : _keyStore = metadata.jwksUri == null
-          ? JsonWebKeyStore()
-          : (JsonWebKeyStore()..addKeySetUrl(metadata.jwksUri!));
+      : _keyStore = metadata.jwksUri == null
+            ? JsonWebKeyStore()
+            : (JsonWebKeyStore()..addKeySetUrl(metadata.jwksUri!));
 
   /// Url of the facebook issuer.
   ///
@@ -155,19 +155,20 @@ class Client {
     Duration? expiresIn,
     DateTime? expiresAt,
     String? idToken,
-  }) => Credential._(
-    this,
-    TokenResponse.fromJson({
-      'access_token': accessToken,
-      'token_type': tokenType,
-      'refresh_token': refreshToken,
-      'id_token': idToken,
-      if (expiresIn != null) 'expires_in': expiresIn.inSeconds,
-      if (expiresAt != null)
-        'expires_at': expiresAt.millisecondsSinceEpoch ~/ 1000,
-    }),
-    null,
-  );
+  }) =>
+      Credential._(
+        this,
+        TokenResponse.fromJson({
+          'access_token': accessToken,
+          'token_type': tokenType,
+          'refresh_token': refreshToken,
+          'id_token': idToken,
+          if (expiresIn != null) 'expires_in': expiresIn.inSeconds,
+          if (expiresAt != null)
+            'expires_at': expiresAt.millisecondsSinceEpoch ~/ 1000,
+        }),
+        null,
+      );
 }
 
 class Credential {
@@ -316,9 +317,8 @@ class Credential {
       '${client.clientId}:${client.clientSecret}'.codeUnits,
     );
 
-    var grantType = _token.refreshToken != null
-        ? 'refresh_token'
-        : 'client_credentials';
+    var grantType =
+        _token.refreshToken != null ? 'refresh_token' : 'client_credentials';
 
     ///Generate DPoP token using the RSA private key
     var json = await http.post(
@@ -369,26 +369,26 @@ class Credential {
   }
 
   Credential.fromJson(Map<String, dynamic> json, {http.Client? httpClient})
-    : this._(
-        Client(
-          Issuer(
-            OpenIdProviderMetadata.fromJson((json['issuer'] as Map).cast()),
+      : this._(
+          Client(
+            Issuer(
+              OpenIdProviderMetadata.fromJson((json['issuer'] as Map).cast()),
+            ),
+            json['client_id'],
+            clientSecret: json['client_secret'],
+            httpClient: httpClient,
           ),
-          json['client_id'],
-          clientSecret: json['client_secret'],
-          httpClient: httpClient,
-        ),
-        TokenResponse.fromJson((json['token'] as Map).cast()),
-        json['nonce'],
-      );
+          TokenResponse.fromJson((json['token'] as Map).cast()),
+          json['nonce'],
+        );
 
   Map<String, dynamic> toJson() => {
-    'issuer': client.issuer.metadata.toJson(),
-    'client_id': client.clientId,
-    'client_secret': client.clientSecret,
-    'token': _token.toJson(),
-    'nonce': nonce,
-  };
+        'issuer': client.issuer.metadata.toJson(),
+        'client_id': client.clientId,
+        'client_secret': client.clientSecret,
+        'token': _token.toJson(),
+        'nonce': nonce,
+      };
 }
 
 extension _IssuerX on Issuer {
@@ -452,9 +452,9 @@ class Flow {
     Map<String, String>? additionalParameters,
     Uri? redirectUri,
     List<String> scopes = const ['openid', 'profile', 'offline_access'],
-  }) : state = state ?? _randomString(20),
-       _additionalParameters = {...?additionalParameters},
-       redirectUri = redirectUri ?? Uri.parse('http://localhost') {
+  })  : state = state ?? _randomString(20),
+        _additionalParameters = {...?additionalParameters},
+        redirectUri = redirectUri ?? Uri.parse('http://localhost') {
     var supportedScopes = client.issuer.metadata.scopesSupported ?? [];
     for (var s in scopes) {
       if (!supportedScopes.contains(s)) {
@@ -491,18 +491,18 @@ class Flow {
     Map<String, String>? additionalParameters,
     List<String> scopes = const ['openid', 'profile', 'email'],
   }) : this._(
-         FlowType.authorizationCode,
-         'code',
-         client,
-         state: state,
-         additionalParameters: {
-           if (prompt != null) 'prompt': prompt,
-           if (accessType != null) 'access_type': accessType,
-           ...?additionalParameters,
-         },
-         scopes: scopes,
-         redirectUri: redirectUri,
-       );
+          FlowType.authorizationCode,
+          'code',
+          client,
+          state: state,
+          additionalParameters: {
+            if (prompt != null) 'prompt': prompt,
+            if (accessType != null) 'access_type': accessType,
+            ...?additionalParameters,
+          },
+          scopes: scopes,
+          redirectUri: redirectUri,
+        );
 
   Flow.authorizationCodeWithPKCE(
     Client client, {
@@ -512,42 +512,42 @@ class Flow {
     String? codeVerifier,
     Map<String, String>? additionalParameters,
   }) : this._(
-         FlowType.proofKeyForCodeExchange,
-         'code',
-         client,
-         state: state,
-         scopes: scopes,
-         codeVerifier: codeVerifier,
-         additionalParameters: {
-           if (prompt != null) 'prompt': prompt,
-           ...?additionalParameters,
-         },
-       );
+          FlowType.proofKeyForCodeExchange,
+          'code',
+          client,
+          state: state,
+          scopes: scopes,
+          codeVerifier: codeVerifier,
+          additionalParameters: {
+            if (prompt != null) 'prompt': prompt,
+            ...?additionalParameters,
+          },
+        );
 
   Flow.implicit(Client client, {String? state, String? device, String? prompt})
-    : this._(
-        FlowType.implicit,
-        ['token id_token', 'id_token token', 'id_token', 'token'].firstWhere(
-          (v) => client.issuer.metadata.responseTypesSupported.contains(v),
-        ),
-        client,
-        state: state,
-        scopes: [
-          'openid',
-          'profile',
-          'email',
-          if (device != null) 'offline_access',
-        ],
-        additionalParameters: {
-          if (device != null) 'device': device,
-          if (prompt != null) 'prompt': prompt,
-        },
-      );
+      : this._(
+          FlowType.implicit,
+          ['token id_token', 'id_token token', 'id_token', 'token'].firstWhere(
+            (v) => client.issuer.metadata.responseTypesSupported.contains(v),
+          ),
+          client,
+          state: state,
+          scopes: [
+            'openid',
+            'profile',
+            'email',
+            if (device != null) 'offline_access',
+          ],
+          additionalParameters: {
+            if (device != null) 'device': device,
+            if (prompt != null) 'prompt': prompt,
+          },
+        );
 
   Flow.jwtBearer(Client client) : this._(FlowType.jwtBearer, null, client);
 
   Flow.clientCredentials(Client client, {List<String> scopes = const []})
-    : this._(FlowType.clientCredentials, 'token', client, scopes: scopes);
+      : this._(FlowType.clientCredentials, 'token', client, scopes: scopes);
 
   Uri get authenticationUri => client.issuer.metadata.authorizationEndpoint
       .replace(queryParameters: _authenticationUriParameters);
@@ -557,19 +557,16 @@ class Flow {
   final String _nonce = _randomString(16);
 
   Map<String, String?> get _authenticationUriParameters {
-    var v =
-        {
-          ..._additionalParameters,
-          'response_type': responseType,
-          'scope': scopes.join(' '),
-          'client_id': client.clientId,
-          'redirect_uri': redirectUri.toString(),
-          'state': state,
-        }..addAll(
-          responseType!.split(' ').contains('id_token')
-              ? {'nonce': _nonce}
-              : {},
-        );
+    var v = {
+      ..._additionalParameters,
+      'response_type': responseType,
+      'scope': scopes.join(' '),
+      'client_id': client.clientId,
+      'redirect_uri': redirectUri.toString(),
+      'state': state,
+    }..addAll(
+        responseType!.split(' ').contains('id_token') ? {'nonce': _nonce} : {},
+      );
 
     if (type == FlowType.proofKeyForCodeExchange) {
       v.addAll({
