@@ -56,6 +56,47 @@ PlatformInfo currPlatform = PlatformInfo();
 
 AuthManager authManager = AuthManager();
 
+/// Thrown by [authenticate] when the in-flight OAuth flow is aborted via
+/// [cancelAuthenticate]. Lets callers distinguish a deliberate user (or
+/// programmatic) cancellation from a genuine network/server failure so they
+/// can suppress error UI accordingly.
+
+class AuthCancelledException implements Exception {
+  final String message;
+
+  const AuthCancelledException([
+    this.message = 'Authentication was cancelled',
+  ]);
+
+  @override
+  String toString() => 'AuthCancelledException: $message';
+}
+
+/// Reference to the desktop [oidc_mobile.Authenticator] currently waiting on
+/// the OAuth callback. Tracked here so [cancelAuthenticate] can tear it down
+/// from outside the awaiting code path without having to thread the handle
+/// through the call site.
+
+oidc_mobile.Authenticator? _pendingAuthenticator;
+
+/// Returns true while a desktop [authenticate] call is awaiting the OAuth
+/// browser redirect. Useful for UI code that wants to gate retry buttons
+/// while a previous attempt is still pending.
+
+bool isAuthenticatePending() => _pendingAuthenticator != null;
+
+/// Aborts any in-flight desktop [authenticate] call. The awaited future
+/// throws an [AuthCancelledException], the local OAuth callback HTTP server
+/// is closed when no other flow needs it, and the cached authenticator
+/// reference is cleared.
+
+Future<void> cancelAuthenticate() async {
+  final pending = _pendingAuthenticator;
+  if (pending == null) return;
+  _pendingAuthenticator = null;
+  await pending.cancel();
+}
+
 /// Dynamically register the user in the POD server
 Future<String> clientDynamicReg(
   String regEndpoint,
@@ -260,8 +301,32 @@ Future<Map> authenticate(
           'Authentication process completed. You can now close this window!',
     );
 
-    /// starts the authentication + authorisation process
-    authResponse = await authenticator.authorize();
+    // Publish the in-flight authenticator so [cancelAuthenticate] can tear
+    // it down from outside this call. Any previously pending authenticator
+    // is cancelled first to free the shared local OAuth callback server.
+    final previous = _pendingAuthenticator;
+    if (previous != null) {
+      try {
+        await previous.cancel();
+      } on Object {
+        // Best-effort cleanup; ignore failures from the prior flow.
+      }
+    }
+    _pendingAuthenticator = authenticator;
+
+    try {
+      /// starts the authentication + authorisation process
+      authResponse = await authenticator.authorize();
+    } on Exception catch (e) {
+      if (e.toString().contains('Flow was cancelled')) {
+        throw const AuthCancelledException();
+      }
+      rethrow;
+    } finally {
+      if (identical(_pendingAuthenticator, authenticator)) {
+        _pendingAuthenticator = null;
+      }
+    }
 
     /// close the webview when finished
     /// closing web view function does not work in Windows applications

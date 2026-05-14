@@ -134,16 +134,37 @@ class Authenticator {
 
   /// Cancels the authentication flow.
   ///
-  /// This method will stop the local http server and complete the [authorize]
-  /// method with an error.
+  /// Errors the [authorize] future for this authenticator's state with a
+  /// `Flow was cancelled` [Exception] and tears down the shared local http
+  /// server when there are no other in-flight authentications waiting on it.
   ///
-  /// This method should be called when the user cancels the authentication flow
-  /// in the browser.
+  /// Idempotent: safe to call multiple times, and a no-op when the flow has
+  /// already completed or has no registered state. This matters on desktop
+  /// where there is no reliable signal that the user has closed the external
+  /// browser window, so cancellation may be requested speculatively.
   Future<void> cancel() async {
     final state = flow.authenticationUri.queryParameters['state'];
-    _requestsByState[state!]?.completeError(Exception('Flow was cancelled'));
-    final server = await _requestServers.remove(port);
-    await server?.close();
+    if (state == null) return;
+
+    final completer = _requestsByState.remove(state);
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(Exception('Flow was cancelled'));
+    }
+
+    // Only stop the local OAuth callback server when no other states are
+    // still waiting for a redirect. Closing it whilst another authenticator
+    // is still in flight would strand that flow on a dead socket.
+    if (_requestsByState.isEmpty) {
+      final serverFuture = _requestServers.remove(port);
+      if (serverFuture != null) {
+        try {
+          final server = await serverFuture;
+          await server.close(force: true);
+        } on Object {
+          // Server may already be closed or never finished binding — ignore.
+        }
+      }
+    }
   }
 
   static final Map<int, Future<HttpServer>> _requestServers = {};
