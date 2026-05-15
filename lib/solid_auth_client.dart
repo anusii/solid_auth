@@ -317,8 +317,8 @@ Future<Map> authenticate(
     try {
       /// starts the authentication + authorisation process
       authResponse = await authenticator.authorize();
-    } on Exception catch (e) {
-      if (e.toString().contains('Flow was cancelled')) {
+    } on Exception {
+      if (!identical(_pendingAuthenticator, authenticator)) {
         throw const AuthCancelledException();
       }
       rethrow;
