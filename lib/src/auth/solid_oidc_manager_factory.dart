@@ -1,10 +1,41 @@
+/// Support for flutter apps authenticating to a Solid server.
+///
+/// Copyright (C) 2026, Software Innovation Institute, ANU.
+///
+/// Licensed under the MIT License (the "License").
+///
+/// License: https://choosealicense.com/licenses/mit/.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+///
+/// Authors: Anushka Vidanage
+library;
+
 import 'package:http/http.dart' as http;
 import 'package:oidc/oidc.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
 import 'package:logging/logging.dart';
 
-import '../models/solid_provider_metadata.dart';
-import '../utils/solid_scopes.dart';
+import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
+import 'package:solid_auth/src/dpop/dpop_token_generator.dart';
+import 'package:solid_auth/src/models/solid_provider_metadata.dart';
+import 'package:solid_auth/src/utils/solid_scopes.dart';
 
 final _log = Logger('solid_auth.SolidOidcManagerFactory');
 
@@ -78,15 +109,63 @@ abstract class SolidOidcManagerFactory {
   ///
   /// [metadata] is optional — pass it if you have already fetched the
   /// discovery document to avoid an extra network round-trip.
-  static OidcUserManager create({
+  static Future<({OidcUserManager manager, DpopKeyManager keyManager})> create({
     required String issuerUri,
     required SolidOidcConfig config,
     SolidProviderMetadata? metadata,
-  }) {
+  }) async {
     _log.fine('Creating OidcUserManager for issuer: $issuerUri');
 
     // Ensure webid scope is always present (Solid-OIDC requirement).
     final scopes = _ensureWebIdScope(config.scopes);
+
+    // 1. Generate (or reuse) the DPoP key pair BEFORE the manager is used.
+    //    The key must exist before the first token-endpoint call so the hook
+    //    can sign the proof.
+    final keyManager = await DpopKeyManager.getInstance();
+
+    // 2. Build the DPoP injection hook using OidcHook.modifyRequest.
+    //
+    //    OidcTokenHookRequest exposes:
+    //      .request  — OidcTokenRequest (has .grantType, .tokenEndpoint, etc.)
+    //      .headers  — Map<String, String>, mutated in place before the HTTP
+    //                  call is fired.
+    //
+    //    We inject a fresh DPoP proof on every token request (authorization_code,
+    //    refresh_token, etc.) because the Solid OP requires it each time.
+    final dpopTokenHook = OidcHook<OidcTokenHookRequest, OidcTokenResponse>(
+      modifyRequest: (hookRequest) async {
+        final tokenEndpointUrl = hookRequest.tokenEndpoint.toString();
+
+        _log.fine(
+          'DPoP hook: generating proof for token endpoint: $tokenEndpointUrl '
+          '(grant_type=${hookRequest.request.grantType})',
+        );
+
+        final dpopProof = await DpopTokenGenerator.generateForTokenEndpoint(
+          tokenEndpointUrl: tokenEndpointUrl,
+          keyManager: keyManager,
+        );
+
+        // Mutate the headers map in place — OidcUserManagerBase reads it
+        // after modifyRequest returns and includes it in the HTTP POST.
+        hookRequest.headers!['DPoP'] = dpopProof;
+
+        return hookRequest;
+      },
+    );
+
+    // 3. Wire the hook into OidcUserManagerSettings.
+    final settings = OidcUserManagerSettings(
+      redirectUri: config.redirectUri,
+      postLogoutRedirectUri: config.postLogoutRedirectUri,
+      scope: scopes,
+      extraAuthenticationParameters: config.extraAuthParameters ?? {},
+      extraTokenParameters: config.extraTokenParameters ?? {},
+      hooks: OidcUserManagerHooks(
+        token: dpopTokenHook,
+      ),
+    );
 
     final clientAuth = config.clientSecret != null
         ? OidcClientAuthentication.clientSecretPost(
@@ -95,39 +174,60 @@ abstract class SolidOidcManagerFactory {
           )
         : OidcClientAuthentication.none(clientId: config.clientId);
 
-    final settings = OidcUserManagerSettings(
-      redirectUri: config.redirectUri,
-      postLogoutRedirectUri: config.postLogoutRedirectUri,
-      scope: scopes,
-      extraAuthenticationParameters: {
-        // Solid-OIDC requires PKCE; package:oidc uses it by default for
-        // the Authorization Code flow, so no extra wiring is needed.
-        ...?config.extraAuthParameters,
-      },
-      extraTokenParameters: config.extraTokenParameters ?? {},
-    );
+    // final settings = OidcUserManagerSettings(
+    //   redirectUri: config.redirectUri,
+    //   postLogoutRedirectUri: config.postLogoutRedirectUri,
+    //   scope: scopes,
+    //   extraAuthenticationParameters: {
+    //     // Solid-OIDC requires PKCE; package:oidc uses it by default for
+    //     // the Authorization Code flow, so no extra wiring is needed.
+    //     ...?config.extraAuthParameters,
+    //   },
+    //   extraTokenParameters: config.extraTokenParameters ?? {},
+    // );
 
-    if (metadata != null) {
-      // Use the pre-fetched discovery document to skip a network call.
-      return OidcUserManager(
-        discoveryDocument: metadata.oidcMetadata,
-        clientCredentials: clientAuth,
-        store: OidcDefaultStore(),
-        settings: settings,
-        httpClient: config.httpClient,
-      );
-    }
+    // 4. Construct the manager — plain httpClient, no DPoP wrapping needed.
+    final manager = metadata != null
+        ? OidcUserManager(
+            discoveryDocument: metadata.oidcMetadata,
+            clientCredentials: clientAuth,
+            store: OidcDefaultStore(),
+            settings: settings,
+            httpClient: config.httpClient,
+          )
+        : OidcUserManager.lazy(
+            discoveryDocumentUri: OidcUtils.getOpenIdConfigWellKnownUri(
+              Uri.parse(issuerUri),
+            ),
+            clientCredentials: clientAuth,
+            store: OidcDefaultStore(),
+            settings: settings,
+            httpClient: config.httpClient,
+          );
 
-    // Lazy path: let package:oidc fetch the discovery document on init().
-    return OidcUserManager.lazy(
-      discoveryDocumentUri: OidcUtils.getOpenIdConfigWellKnownUri(
-        Uri.parse(issuerUri),
-      ),
-      clientCredentials: clientAuth,
-      store: OidcDefaultStore(),
-      settings: settings,
-      httpClient: config.httpClient,
-    );
+    // if (metadata != null) {
+    //   // Use the pre-fetched discovery document to skip a network call.
+    //   return OidcUserManager(
+    //     discoveryDocument: metadata.oidcMetadata,
+    //     clientCredentials: clientAuth,
+    //     store: OidcDefaultStore(),
+    //     settings: settings,
+    //     httpClient: config.httpClient,
+    //   );
+    // }
+
+    // // Lazy path: let package:oidc fetch the discovery document on init().
+    // return OidcUserManager.lazy(
+    //   discoveryDocumentUri: OidcUtils.getOpenIdConfigWellKnownUri(
+    //     Uri.parse(issuerUri),
+    //   ),
+    //   clientCredentials: clientAuth,
+    //   store: OidcDefaultStore(),
+    //   settings: settings,
+    //   httpClient: config.httpClient,
+    // );
+
+    return (manager: manager, keyManager: keyManager);
   }
 
   static List<String> _ensureWebIdScope(List<String> scopes) {

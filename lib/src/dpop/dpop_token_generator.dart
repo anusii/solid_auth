@@ -1,34 +1,108 @@
+/// Support for flutter apps authenticating to a Solid server.
+///
+/// Copyright (C) 2026, Software Innovation Institute, ANU.
+///
+/// Licensed under the MIT License (the "License").
+///
+/// License: https://choosealicense.com/licenses/mit/.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+///
+/// Authors: Anushka Vidanage
+library;
+
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:uuid/uuid.dart';
 import 'package:logging/logging.dart';
 
-import 'dpop_key_manager.dart';
+import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 
 final _log = Logger('solid_auth.DpopTokenGenerator');
 const _uuid = Uuid();
 
-/// Generates DPoP (Demonstrating Proof-of-Possession) proof tokens.
+/// Generates DPoP (Demonstrating Proof-of-Possession) proof tokens per
+/// RFC 9449 and the Solid-OIDC specification.
 ///
-/// A DPoP proof is a short-lived JWT that binds an HTTP request to the
-/// key pair associated with the current session. It must be sent alongside
-/// the `Authorization: DPoP <access_token>` header.
+/// ## Two kinds of DPoP proof
 ///
-/// Reference: https://datatracker.ietf.org/doc/html/rfc9449
+/// ### 1. Token-endpoint proof  (call [generateForTokenEndpoint])
 ///
-/// ## Migration from solid_auth 0.1.x
+/// Sent as the `DPoP` header on the token request to the OP.
+/// The OP uses it to key-bind the issued access token by embedding
+/// `cnf: { jkt: "<thumbprint>" }` in the token payload.
 ///
-/// The old free-standing function signature:
-/// ```dart
-/// String genDpopToken(endPointUrl, rsaKeyPair, publicKeyJwk, httpMethod)
 /// ```
-/// is preserved as the static [generate] method, but the recommended
-/// new approach is to use [generateForRequest] which fetches the key pair
-/// from [DpopKeyManager] automatically.
+/// POST /token
+/// DPoP: <proof>            ← no `ath` claim here
+/// Content-Type: application/x-www-form-urlencoded
+/// ...
+/// ```
+///
+/// ### 2. Resource-server proof  (call [generateForRequest])
+///
+/// Sent alongside every protected-resource HTTP request.
+/// The RS checks:
+/// - `htm` matches the HTTP method.
+/// - `htu` matches the request URL.
+/// - `jti` has not been seen before (replay prevention).
+/// - The proof is signed by the key whose thumbprint matches `cnf.jkt`
+///   in the access token.
+/// - `ath` = base64url(SHA-256(ASCII(access_token))).
+///
+/// ```
+/// PATCH /resource
+/// Authorization: DPoP <access_token>
+/// DPoP: <proof>            ← includes `ath` claim
+/// ```
+///
+/// The `cnf` error your Solid server returned means the access token was
+/// issued WITHOUT step 1 — there was no DPoP proof on the token request.
 abstract class DpopTokenGenerator {
   DpopTokenGenerator._();
 
-  // ── New API ───────────────────────────────────────────────────────────────
+  // ── Token-endpoint proof ───────────────────────────────────────────────────
+
+  /// Generates a DPoP proof for the **token endpoint request**.
+  ///
+  /// Must be sent as the `DPoP` header when calling the OP's token endpoint.
+  /// Do NOT include an `ath` claim here (there is no access token yet).
+  ///
+  /// [tokenEndpointUrl] — the OP token endpoint URI (e.g.
+  ///   `https://solidcommunity.net/token`).
+  static Future<String> generateForTokenEndpoint({
+    required String tokenEndpointUrl,
+    DpopKeyManager? keyManager,
+  }) async {
+    final km = keyManager ?? await DpopKeyManager.getInstance();
+    _log.fine('Generating DPoP token-endpoint proof for: $tokenEndpointUrl');
+    return generate(
+      httpMethod: 'POST',
+      endpointUrl: tokenEndpointUrl,
+      keyPair: km.keyPair,
+      publicKeyJwk: km.publicKeyJwk,
+      accessToken: null, // no ath on token request
+    );
+  }
 
   /// Generates a DPoP proof for [httpMethod] on [endpointUrl], automatically
   /// using the managed key pair from [DpopKeyManager].
@@ -39,12 +113,14 @@ abstract class DpopTokenGenerator {
     required String endpointUrl,
     required String httpMethod,
     String? accessToken,
+    DpopKeyManager? keyManager,
   }) async {
-    final keyManager = await DpopKeyManager.getInstance();
+    // final keyManager = await DpopKeyManager.getInstance();
+    final km = keyManager ?? await DpopKeyManager.getInstance();
     return generate(
       endpointUrl: endpointUrl,
-      keyPair: keyManager.keyPair,
-      publicKeyJwk: keyManager.publicKeyJwk,
+      keyPair: km.keyPair,
+      publicKeyJwk: km.publicKeyJwk,
       httpMethod: httpMethod,
       accessToken: accessToken,
     );
@@ -73,11 +149,27 @@ abstract class DpopTokenGenerator {
   }) {
     _log.fine('Generating DPoP proof: $httpMethod $endpointUrl');
 
+    final String tokenId = _uuid.v4(); // Unique token ID (replay protection)
+
+    /// Initialising token head and body (payload)
+    /// https://solid.github.io/solid-oidc/primer/#authorization-code-pkce-flow
+    /// https://datatracker.ietf.org/doc/html/rfc7519
+    var tokenHead = {'alg': 'RS256', 'typ': 'dpop+jwt', 'jwk': publicKeyJwk};
+
+    // RFC 9449 §4.2: htu MUST NOT include query or fragment components.
+    final parsedUrl = Uri.parse(endpointUrl);
+    final htu = Uri(
+      scheme: parsedUrl.scheme,
+      host: parsedUrl.host,
+      port: parsedUrl.hasPort ? parsedUrl.port : null,
+      path: parsedUrl.path,
+    ).toString();
+
     final payload = <String, dynamic>{
-      'jti': _uuid.v4(),   // Unique token ID (replay protection)
+      'htu': htu,
       'htm': httpMethod.toUpperCase(),
-      'htu': endpointUrl,
-      'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      'jti': tokenId,
+      'iat': (DateTime.now().millisecondsSinceEpoch / 1000).round(),
     };
 
     // `ath` claim: base64url(sha256(ascii(access_token)))
@@ -86,16 +178,17 @@ abstract class DpopTokenGenerator {
       payload['ath'] = _sha256Base64Url(accessToken);
     }
 
+    /// Create a json web token
     final jwt = JWT(
       payload,
-      header: {
-        'typ': 'dpop+jwt',
-        'alg': 'RS256',
-        'jwk': publicKeyJwk,
-      },
+      header: tokenHead,
     );
 
-    return jwt.sign(RSAPrivateKey(keyPair.privateKey));
+    /// Sign the JWT using private key
+    return jwt.sign(
+      RSAPrivateKey(keyPair.privateKey),
+      algorithm: JWTAlgorithm.RS256,
+    );
   }
 
   // ── Internal ───────────────────────────────────────────────────────────────
@@ -103,14 +196,8 @@ abstract class DpopTokenGenerator {
   /// Returns the base64url-encoded SHA-256 hash of [input] (ASCII encoded).
   /// Used for the `ath` claim per RFC 9449 §4.2.
   static String _sha256Base64Url(String input) {
-    // dart_jsonwebtoken uses pointycastle internally; we use its hashing here.
-    // In a real implementation wire in a sha256 utility from pointycastle or
-    // crypto package. Shown here as a placeholder.
-    // ignore: todo
-    // TODO: replace with `crypto` package sha256 + base64Url encoding.
-    throw UnimplementedError(
-      'SHA-256/base64url for ath claim — wire in the `crypto` package: '
-      'base64Url.encode(sha256.convert(ascii.encode(accessToken)).bytes)',
-    );
+    return base64Url
+        .encode(sha256.convert(ascii.encode(input)).bytes)
+        .replaceAll('=', '');
   }
 }
