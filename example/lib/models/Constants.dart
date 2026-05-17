@@ -1,6 +1,8 @@
 /// SolidPod library to support privacy first data store on Solid Servers
 ///
-/// Copyright (C) 2026, Software Innovation Institute ANU
+// Time-stamp: <Wednesday 2025-09-17 09:19:35 +1000 Graham Williams>
+///
+/// Copyright (C) 2025, Software Innovation Institute ANU
 ///
 /// Licensed under the MIT License (the "License").
 ///
@@ -24,7 +26,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 ///
-/// Authors: Anushka Vidanage
+/// Authors: AUTHORS
 
 // Add the library directive as we have doc entries above. We publish the above
 // meta doc lines in the docs.
@@ -34,22 +36,18 @@ library;
 // Flutter imports:
 import 'package:flutter/material.dart';
 
-// Project imports:
-import 'package:solid_auth_example/screens/LoginScreen.dart';
+// All the contants
+const darkGold = Color(0xFFBE830E);
+const brickRed = Color(0xFFD89E7A);
+const lightGold = Color(0xFFDBBA78);
+const exLightBlue = Color(0xFFD8ECF3);
+const darkCopper = Color(0xFFBE4E0E);
+const titleAsh = Color(0xFF30384D);
+const backgroundWhite = Color(0xFFF5F6FC);
+const lightGray = Color(0xFF8793B2);
+const bgOffWhite = Color(0xFFF2F4FC);
 
-void main() {
-  runApp(MyApp());
-}
+const kDefaultPadding = 20.0;
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of the application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Solid Authentication',
-      theme: ThemeData(),
-      home: LoginScreen(),
-    );
-  }
-}
+double screenWidth(BuildContext context) => MediaQuery.of(context).size.width;
+// double screenHeight(BuildContext context) => MediaQuery.of(context).size.height;

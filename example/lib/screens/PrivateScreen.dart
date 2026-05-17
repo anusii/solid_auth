@@ -1,6 +1,8 @@
 /// SolidPod library to support privacy first data store on Solid Servers
 ///
-/// Copyright (C) 2026, Software Innovation Institute ANU
+// Time-stamp: <Wednesday 2025-09-17 09:19:35 +1000 Graham Williams>
+///
+/// Copyright (C) 2025, Software Innovation Institute ANU
 ///
 /// Licensed under the MIT License (the "License").
 ///
@@ -24,7 +26,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 ///
-/// Authors: Anushka Vidanage
+/// Authors: AUTHORS
 
 // Add the library directive as we have doc entries above. We publish the above
 // meta doc lines in the docs.
@@ -33,23 +35,46 @@ library;
 
 // Flutter imports:
 import 'package:flutter/material.dart';
+import 'package:solid_auth/solid_auth.dart';
 
+import 'package:solid_auth_example/models/Constants.dart';
 // Project imports:
-import 'package:solid_auth_example/screens/LoginScreen.dart';
+import 'package:solid_auth_example/models/Responsive.dart';
+import 'package:solid_auth_example/screens/PrivateProfile.dart';
 
-void main() {
-  runApp(MyApp());
-}
+// ignore: must_be_immutable
+class PrivateScreen extends StatelessWidget {
+  SolidAuthData authData; // Authentication data
+  SolidAuthManager authManager;
+  PrivateScreen({Key? key, required this.authData, required this.authManager})
+      : super(key: key);
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of the application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Solid Authentication',
-      theme: ThemeData(),
-      home: LoginScreen(),
-    );
+    // Assign loading screen
+    var loadingScreen =
+        PrivateProfile(authData: authData, authManager: authManager);
+
+    // Setup Scaffold to be responsive
+    return Scaffold(
+        body: Responsive(
+      mobile: loadingScreen,
+      tablet: Row(
+        children: [
+          Expanded(
+            flex: 10,
+            child: loadingScreen,
+          ),
+        ],
+      ),
+      desktop: Row(
+        children: [
+          Expanded(
+            flex: screenWidth(context) < 1300 ? 10 : 8,
+            child: loadingScreen,
+          ),
+        ],
+      ),
+    ));
   }
 }

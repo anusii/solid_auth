@@ -1,6 +1,8 @@
 /// SolidPod library to support privacy first data store on Solid Servers
 ///
-/// Copyright (C) 2026, Software Innovation Institute ANU
+// Time-stamp: <Wednesday 2025-09-17 09:19:35 +1000 Graham Williams>
+///
+/// Copyright (C) 2025, Software Innovation Institute ANU
 ///
 /// Licensed under the MIT License (the "License").
 ///
@@ -24,7 +26,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 ///
-/// Authors: Anushka Vidanage
+/// Authors: AUTHORS
 
 // Add the library directive as we have doc entries above. We publish the above
 // meta doc lines in the docs.
@@ -35,21 +37,24 @@ library;
 import 'package:flutter/material.dart';
 
 // Project imports:
-import 'package:solid_auth_example/screens/LoginScreen.dart';
+import 'package:solid_auth_example/models/Responsive.dart';
+import 'package:solid_auth_example/screens/PublicProfile.dart';
 
-void main() {
-  runApp(MyApp());
-}
+// ignore: must_be_immutable
+class PublicScreen extends StatelessWidget {
+  String webId;
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of the application.
+  PublicScreen({Key? key, required this.webId}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Solid Authentication',
-      theme: ThemeData(),
-      home: LoginScreen(),
-    );
+    // Navigate to public profile with a loading screen
+    var loadingScreen = PublicProfile(webId: webId);
+    return Scaffold(
+        body: Responsive(
+      mobile: loadingScreen,
+      tablet: loadingScreen,
+      desktop: loadingScreen,
+    ));
   }
 }
