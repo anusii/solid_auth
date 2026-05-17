@@ -12,6 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Crypto package
+  crypto: ^3.0.7
+  
   # Core OIDC package (OpenID certified) replacing the forked openid_client
   oidc: ^0.14.0
   oidc_core: ^0.16.0
