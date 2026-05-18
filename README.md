@@ -7,7 +7,7 @@
 [![GitHub Version](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/anusii/solid_auth/master/pubspec.yaml&query=$.version&label=version&logo=github)](https://github.com/anusii/solid_auth/blob/dev/CHANGELOG.md)
 [![Pub Version](https://img.shields.io/pub/v/solid_auth?label=pub.dev&labelColor=333940&logo=flutter)](https://pub.dev/packages/solid_auth)
 [![GitHub Last Updated](https://img.shields.io/github/last-commit/anusii/solid_auth?label=last%20updated)](https://github.com/anusii/solid_auth/commits/dev/)
-[![GitHub Commit Activity (main)](https://img.shields.io/github/commit-activity/w/anusii/solid_auth/main)](https://github.com/anusii/solid_auth/commits/dev/)
+[![GitHub Commit Activity (main)](https://img.shields.io/github/commit-activity/w/anusii/solid_auth/dev)](https://github.com/anusii/solid_auth/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/anusii/solid_auth)](https://github.com/anusii/solid_auth/issues)
 
 # Solid Auth
