@@ -1,15 +1,14 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+<!-- markdownlint-disable MD041 MD033 -->
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+[![GitHub License](https://img.shields.io/github/license/anusii/solidpod)](https://raw.githubusercontent.com/anusii/solidpod/dev/LICENSE)
+[![GitHub Version](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/anusii/solidpod/master/pubspec.yaml&query=$.version&label=version&logo=github)](https://github.com/anusii/solidpod/blob/dev/CHANGELOG.md)
+[![Pub Version](https://img.shields.io/pub/v/solidpod?label=pub.dev&labelColor=333940&logo=flutter)](https://pub.dev/packages/solidpod)
+[![GitHub Last Updated](https://img.shields.io/github/last-commit/anusii/solidpod?label=last%20updated)](https://github.com/anusii/solidpod/commits/dev/)
+[![GitHub Commit Activity (main)](https://img.shields.io/github/commit-activity/w/anusii/solidpod/main)](https://github.com/anusii/solidpod/commits/dev/)
+[![GitHub Issues](https://img.shields.io/github/issues/anusii/solidpod)](https://github.com/anusii/solidpod/issues)
 
 # Solid Auth
 
