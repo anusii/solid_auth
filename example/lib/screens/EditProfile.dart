@@ -47,13 +47,11 @@ import 'package:solid_auth_example/models/SolidApi.dart';
 import 'package:solid_auth_example/screens/PrivateScreen.dart';
 
 class EditProfile extends StatefulWidget {
-  final SolidAuthData authData;
   final SolidAuthManager authManager;
   final String webId;
   final Map profData;
   const EditProfile({
     Key? key,
-    required this.authData,
     required this.authManager,
     required this.webId,
     required this.profData,
@@ -137,7 +135,6 @@ class _EditProfileState extends State<EditProfile> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) => PrivateScreen(
-                                                authData: widget.authData,
                                                 authManager: widget.authManager,
                                               )),
                                     );
@@ -163,7 +160,8 @@ class _EditProfileState extends State<EditProfile> {
                               ),
                               ElevatedButton(
                                   onPressed: () async {
-                                    final authData = widget.authData;
+                                    final authData =
+                                        widget.authManager.authData!;
 
                                     // Get access token
                                     String accessToken = authData.accessToken;
@@ -277,7 +275,6 @@ class _EditProfileState extends State<EditProfile> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) => PrivateScreen(
-                                                authData: widget.authData,
                                                 authManager: widget.authManager,
                                               )),
                                     );

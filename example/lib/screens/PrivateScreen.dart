@@ -44,16 +44,13 @@ import 'package:solid_auth_example/screens/PrivateProfile.dart';
 
 // ignore: must_be_immutable
 class PrivateScreen extends StatelessWidget {
-  SolidAuthData authData; // Authentication data
   SolidAuthManager authManager;
-  PrivateScreen({Key? key, required this.authData, required this.authManager})
-      : super(key: key);
+  PrivateScreen({Key? key, required this.authManager}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     // Assign loading screen
-    var loadingScreen =
-        PrivateProfile(authData: authData, authManager: authManager);
+    var loadingScreen = PrivateProfile(authManager: authManager);
 
     // Setup Scaffold to be responsive
     return Scaffold(

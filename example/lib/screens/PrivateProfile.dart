@@ -46,11 +46,8 @@ import 'package:solid_auth_example/models/SolidApi.dart' as rest_api;
 import 'package:solid_auth_example/screens/ProfileInfo.dart';
 
 class PrivateProfile extends StatefulWidget {
-  final SolidAuthData authData; // Authentication data
   final SolidAuthManager authManager;
-  const PrivateProfile(
-      {Key? key, required this.authData, required this.authManager})
-      : super(key: key);
+  const PrivateProfile({Key? key, required this.authManager}) : super(key: key);
 
   @override
   State<PrivateProfile> createState() => _PrivateProfileState();
@@ -160,11 +157,11 @@ class _PrivateProfileState extends State<PrivateProfile> {
                 controller: ScrollController(),
                 padding: EdgeInsets.all(kDefaultPadding * 1.5),
                 child: ProfileInfo(
-                    profData: profData,
-                    authManager: widget.authManager,
-                    profType: 'private',
-                    webId: webId,
-                    authData: authData)),
+                  profData: profData,
+                  authManager: widget.authManager,
+                  profType: 'private',
+                  webId: webId,
+                )),
           )
         ],
       ),
@@ -173,7 +170,7 @@ class _PrivateProfileState extends State<PrivateProfile> {
 
   @override
   Widget build(BuildContext context) {
-    SolidAuthData authData = widget.authData;
+    SolidAuthData authData = widget.authManager.authData!;
     String webId = authData.webId;
 
     // Get profile url

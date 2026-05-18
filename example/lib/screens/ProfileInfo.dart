@@ -43,7 +43,6 @@ import 'package:solid_auth_example/screens/EditProfile.dart';
 
 class ProfileInfo extends StatelessWidget {
   final Map profData; // Profile data
-  final SolidAuthData? authData; // Authentication related data
   final SolidAuthManager? authManager;
   final String profType; // Public or private
   final String? webId; // WebId of the user
@@ -53,7 +52,6 @@ class ProfileInfo extends StatelessWidget {
       required this.profData,
       this.authManager,
       required this.profType,
-      this.authData,
       this.webId})
       : super(key: key);
 
@@ -111,7 +109,6 @@ class ProfileInfo extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => EditProfile(
-                                          authData: authData!,
                                           authManager: authManager!,
                                           webId: webId!,
                                           profData: profData,

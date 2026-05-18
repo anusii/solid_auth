@@ -237,25 +237,33 @@ class LoginScreen extends StatelessWidget {
               // Define Solid Auth Manager
               final authManager = SolidAuthManager(
                 config: SolidOidcConfig(
-                  // clientId: 'my_solid_client',
-
-                  // // On mobile: a custom-scheme URI registered with the OS.
-                  // // On web:    the path to your redirect.html (see package:oidc docs).
-                  // redirectUri: Uri.parse('com.example.solidapp://callback'),
-
-                  // postLogoutRedirectUri: Uri.parse('com.example.solidapp://callback'),
-
+                  /// Custom URI schemes defined depending on the platform
+                  /// [clientId] parameter should point to a `jsonld` document
+                  /// containing the required authentication details.
+                  /// For example see: https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld
+                  ///
+                  /// redirectUris for each platform defined below should match
+                  /// the redirect uris defined on the clientId document above
+                  ///
+                  /// Client ID document hosted on web. Having a separate document for a client app
+                  /// will prevent the app from requiring to do dynamic client registration everytime
+                  /// app logs in
                   clientId:
                       'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
 
-                  // On mobile: a custom-scheme URI registered with the OS.
-                  // On web:    the path to your redirect.html (see package:oidc docs).
+                  /// Use the following schemes for defining redirect uris
+                  /// Also refer to the oidc documentation
+                  /// at: https://bdaya-dev.github.io/oidc/oidc-getting-started/
+                  ///   On mobile: a custom-scheme URI registered with the OS (eg: com.example.solid.auth.example://redirect)
+                  ///   On web: the path to your redirect.html (eg: https://anushkavidanage.github.io/solid_auth/example_app/redirect.html)
+                  ///   On desktop: localhost as per oidc documentation (eg: http://localhost:0/redirect)
                   redirectUri: Uri.parse('http://localhost:0/redirect'),
 
+                  /// Use the same redirect uris used above for corresponding plaform
                   postLogoutRedirectUri: Uri.parse(
                       'http://localhost:0/redirect'), //Uri.parse('${appUrlScheme}://logout'),
 
-                  // Solid-OIDC scopes — webid is always added automatically.
+                  /// Solid-OIDC scopes. Webid is always added automatically
                   scopes: SolidScopes.defaultScopes,
                 ),
               );
@@ -264,18 +272,23 @@ class LoginScreen extends StatelessWidget {
               try {
                 // getIssuer() + OidcUserManager.init() + loginAuthorizationCodeFlow()
                 // are all handled internally.
-                final authData =
-                    await authManager.authenticate(webIdController.text);
+                await authManager.authenticate(webIdController.text);
 
-                // Navigate to the profile through main screen
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => PrivateScreen(
-                            authData: authData,
-                            authManager: authManager,
-                          )),
-                );
+                if (authManager.authData != null) {
+                  // Navigate to the profile through main screen
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PrivateScreen(
+                              authManager: authManager,
+                            )),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Login failed! \n Try again in few seconds'),
+                    duration: const Duration(milliseconds: 3000),
+                  ));
+                }
               } on SolidAuthException catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text('Login failed! \n ${e.message})'),

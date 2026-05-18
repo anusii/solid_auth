@@ -99,6 +99,11 @@ class SolidAuthManager {
   final SolidOidcConfig config;
   final http.Client? httpClient;
 
+  /// The [SolidAuthData] instance for the auth manager
+  /// Stores authentication data such as access token and web id
+  /// after a successful authentication
+  SolidAuthData? authData;
+
   OidcUserManager? _oidcManager;
 
   /// The [DpopKeyManager] created during [initForIssuer].
@@ -141,7 +146,7 @@ class SolidAuthManager {
   /// Authorization Code + PKCE flow.
   ///
   /// Returns a [SolidAuthData] with the tokens and extracted WebID on success.
-  Future<SolidAuthData> authenticate(
+  Future<SolidAuthData?> authenticate(
     String webIdOrIssuerUri, {
     List<String>? scopeOverride,
   }) async {
@@ -149,7 +154,9 @@ class SolidAuthManager {
 
     final issuerUri =
         await WebIdUtils.getIssuer(webIdOrIssuerUri, httpClient: httpClient);
-    return login(issuerUri: issuerUri, scopeOverride: scopeOverride);
+    authData = await login(issuerUri: issuerUri, scopeOverride: scopeOverride);
+
+    return authData;
   }
 
   /// Initialises for [issuerUri] and triggers the Authorization Code flow.
