@@ -104,8 +104,6 @@ done < .locignore
 
 fi
 
-echo "IGNORE: ${IGNORE_PATTERNS[@]}"
-
 # Filter FILES array
 
 declare -a FILTERED_FILES
