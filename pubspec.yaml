@@ -39,3 +39,20 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
   mocktail: ^1.0.0
+
+# Running platforms
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
+
+# fast_rsa doesn't declare its own web assets in pubspec.yaml, so they
+# must be declared here or they won't be present in the web build output.
+flutter:
+  assets:
+    - packages/fast_rsa/web/assets/worker.js
+    - packages/fast_rsa/web/assets/wasm_exec.js
+    - packages/fast_rsa/web/assets/rsa.wasm
