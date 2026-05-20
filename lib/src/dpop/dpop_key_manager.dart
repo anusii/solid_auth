@@ -104,6 +104,26 @@ class DpopKeyManager {
     _instance = null;
   }
 
+  /// Restores the singleton from previously persisted PEM-encoded keys.
+  ///
+  /// Call this before [getInstance] on app restart to reuse the same key
+  /// pair that was active when the access token was issued. This ensures
+  /// the access token's cnf.jkt still matches the restored key pair,
+  /// avoiding the DPoP thumbprint mismatch the server would otherwise reject.
+  static Future<DpopKeyManager> restoreFromPem({
+    required String privateKeyPem,
+    required String publicKeyPem,
+  }) async {
+    final publicKeyJwk = await RSA.convertPublicKeyToJWK(publicKeyPem);
+    publicKeyJwk['alg'] = 'RS256';
+    // KeyPair constructor order: KeyPair(publicKey, privateKey)
+    _instance = DpopKeyManager._(
+      keyPair: KeyPair(publicKeyPem, privateKeyPem),
+      publicKeyJwk: publicKeyJwk,
+    );
+    return _instance!;
+  }
+
   /// Generates a new key pair, replacing any cached instance.
   static Future<DpopKeyManager> _generate() async {
     // final keyPair = await RSA.generate(2048);
