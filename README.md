@@ -1,7 +1,14 @@
 # solid_auth
 
-[![pub.dev](https://img.shields.io/pub/v/solid_auth.svg)](https://pub.dev/packages/solid_auth)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+
+[![GitHub License](https://img.shields.io/github/license/anusii/solid_auth)](https://raw.githubusercontent.com/anusii/solid_auth/dev/LICENSE)
+[![GitHub Version](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/anusii/solid_auth/master/pubspec.yaml&query=$.version&label=version&logo=github)](https://github.com/anusii/solid_auth/blob/dev/CHANGELOG.md)
+[![Pub Version](https://img.shields.io/pub/v/solid_auth?label=pub.dev&labelColor=333940&logo=flutter)](https://pub.dev/packages/solid_auth)
+[![GitHub Last Updated](https://img.shields.io/github/last-commit/anusii/solid_auth?label=last%20updated)](https://github.com/anusii/solid_auth/commits/dev/)
+[![GitHub Commit Activity (main)](https://img.shields.io/github/commit-activity/w/anusii/solid_auth/dev)](https://github.com/anusii/solid_auth/commits/dev/)
+[![GitHub Issues](https://img.shields.io/github/issues/anusii/solid_auth)](https://github.com/anusii/solid_auth/issues)
 
 Solid-OIDC authentication for Flutter apps. Handles Authorization Code + PKCE, DPoP key binding (RFC 9449), and WebID-based issuer discovery. This package is built on the OpenID-certified [`package:oidc`](https://pub.dev/packages/oidc).
 
