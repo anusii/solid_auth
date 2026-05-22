@@ -29,9 +29,9 @@ library;
 
 import 'dart:convert';
 
+import 'package:logging/logging.dart';
 import 'package:oidc_core/oidc_core.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
-import 'package:logging/logging.dart';
 
 final _log = Logger('solid_auth.SolidAuthSessionStore');
 

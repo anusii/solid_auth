@@ -32,8 +32,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fast_rsa/fast_rsa.dart';
-import 'package:uuid/uuid.dart';
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 
