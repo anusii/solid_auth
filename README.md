@@ -10,7 +10,21 @@
 [![GitHub Commit Activity (main)](https://img.shields.io/github/commit-activity/w/anusii/solid_auth/dev)](https://github.com/anusii/solid_auth/commits/dev/)
 [![GitHub Issues](https://img.shields.io/github/issues/anusii/solid_auth)](https://github.com/anusii/solid_auth/issues)
 
-Solid-OIDC authentication for Flutter apps. Handles Authorization Code + PKCE, DPoP key binding (RFC 9449), and WebID-based issuer discovery. This package is built on the OpenID-certified [`package:oidc`](https://pub.dev/packages/oidc).
+Solid-OIDC authentication package for Flutter apps. Handles Authorization Code + PKCE, DPoP key binding (RFC 9449), and WebID-based issuer discovery. This package is built on the OpenID-certified [`package:oidc`](https://pub.dev/packages/oidc). Implemented by the [ANU Software Innovation
+Institute](https://sii.anu.edu.au) supporting the [Australian Solid
+Community](https://solidcommunity.au).
+
+---
+
+## What is Solid?
+
+Solid (<https://solidproject.org/>) is an open standard for a server
+to host personal online data stores (Pods). Numerous providers of
+Solid Server hosting are emerging allowing users to host and migrate
+their Pods on any such servers (or to run their own server).
+
+To know more about our work related to Solid Pods
+visit <https://solidcommunity.au>
 
 ---
 
