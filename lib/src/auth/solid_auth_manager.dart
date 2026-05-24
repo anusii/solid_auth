@@ -186,6 +186,8 @@ class SolidAuthManager {
     //   await _oidcManager!.init();
     // }
 
+    // await _oidcManager!.forgetUser();
+
     _log.fine('Launching Authorization Code + PKCE flow');
     final user = await _oidcManager!.loginAuthorizationCodeFlow();
 
@@ -323,7 +325,19 @@ class SolidAuthManager {
         authData = data;
         _log.info('Session restored for: ${data.webId}');
       } else {
-        _log.fine('Stored tokens not found or could not be refreshed');
+        _log.fine('Stored tokens not found or could not be refreshed — '
+            'clearing session state');
+        // Clear the persisted session so subsequent tryRestoreSession() calls
+        // don't attempt (and fail) again.  Also reset the OIDC manager so that
+        // the next login() call creates a completely fresh OidcUserManager with
+        // no stale currentUser — this prevents an outdated id_token_hint from
+        // being sent in the authorization request, which can cause CSS to
+        // throw an error when its oidc-provider session has expired
+        // (e.g. after a server restart).
+        await _sessionStore.clearSession();
+        DpopKeyManager.clear();
+        _oidcManager = null;
+        _keyManager = null;
       }
       return data;
     } catch (e, stack) {

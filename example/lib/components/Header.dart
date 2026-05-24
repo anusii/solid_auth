@@ -85,12 +85,19 @@ class Header extends StatelessWidget {
                         color: Colors.black,
                       ),
                     ),
-                    onPressed: () {
-                      authManager.logout();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                      );
+                    onPressed: () async {
+                      // Await logout so the browser completes the end-session
+                      // redirect before we navigate away.  Without this, the
+                      // CSS oidc-provider session cookie is not cleared, and
+                      // the next login attempt fails with "accountId mismatch".
+                      await authManager.logout();
+                      if (context.mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => LoginScreen()),
+                        );
+                      }
                     },
                   )
                 : IconButton(
