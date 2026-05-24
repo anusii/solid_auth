@@ -87,9 +87,7 @@ class Header extends StatelessWidget {
                     ),
                     onPressed: () async {
                       // Await logout so the browser completes the end-session
-                      // redirect before we navigate away.  Without this, the
-                      // CSS oidc-provider session cookie is not cleared, and
-                      // the next login attempt fails with "accountId mismatch".
+                      // redirect before we navigate away.
                       await authManager.logout();
                       if (context.mounted) {
                         Navigator.pushReplacement(
