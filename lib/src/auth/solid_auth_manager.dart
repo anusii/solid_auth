@@ -28,16 +28,16 @@
 library;
 
 import 'package:http/http.dart' as http;
-import 'package:oidc/oidc.dart';
 import 'package:logging/logging.dart';
+import 'package:oidc/oidc.dart';
 
+import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
+import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/models/solid_auth_data.dart';
 import 'package:solid_auth/src/models/solid_provider_metadata.dart';
 import 'package:solid_auth/src/utils/solid_scopes.dart';
 import 'package:solid_auth/src/utils/webid_utils.dart';
-import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
-import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 
 final _log = Logger('solid_auth.SolidAuthManager');
 
