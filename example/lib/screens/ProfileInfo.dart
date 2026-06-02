@@ -35,6 +35,7 @@ library;
 
 // Flutter imports:
 import 'package:flutter/material.dart';
+
 import 'package:solid_auth/solid_auth.dart';
 
 // Project imports:

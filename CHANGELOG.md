@@ -7,9 +7,11 @@ description of the update. Updates in the 0.1.n series are heading
 toward a 0.2 release. The `[version timestamp user]` string is
 utilised by the flutter version_widget package.
 
-## 0.3 
+## 1.0 Migrate to using OIDC OpenID certified
 
-+ Implementing Authorization Code + PKCE, DPoP key binding (RFC 9449), and WebID-based issuer discovery using OpenID-certified [`package:oidc`](https://pub.dev/packages/oidc) [0.2.0 20260521 anushkavidanage]
++ WebID issuer discovery use OpenID certified [1.0.0 20260521 anushkavidanage]
++ Implementing Authorization Code + PKCE
++ DPoP key binding (RFC 9449)
 
 ## 0.2 Stability
 
