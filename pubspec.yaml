@@ -42,7 +42,6 @@ dev_dependencies:
   mocktail: ^1.0.0
   openidconnect_web: any
   pointycastle: ^4.0.0
-  solid_auth_example: any
   url_launcher: any
   web: any
 
