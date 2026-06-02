@@ -48,11 +48,11 @@ import 'package:solid_auth_example/screens/LoginScreen.dart';
 // ignore: must_be_immutable
 class Header extends StatelessWidget {
   var mainDrawer;
-  String logoutUrl;
+  SolidAuthManager authManager;
   Header({
     Key? key,
     required this.mainDrawer,
-    required this.logoutUrl,
+    required this.authManager,
   }) : super(key: key);
 
   @override
@@ -63,14 +63,15 @@ class Header extends StatelessWidget {
         padding: const EdgeInsets.all(kDefaultPadding / 1.5),
         child: Row(
           children: [
-            if (Responsive.isMobile(context) & (logoutUrl != 'none'))
+            if (Responsive.isMobile(context) & (authManager.isAuthenticated))
               IconButton(onPressed: () {}, icon: Icon(Icons.menu)),
             if (!Responsive.isDesktop(context)) SizedBox(width: 5),
             Spacer(),
             if (!Responsive.isDesktop(context)) SizedBox(width: 5),
             SizedBox(width: kDefaultPadding / 4),
-            if (logoutUrl != 'none') SizedBox(width: kDefaultPadding / 4),
-            (logoutUrl != 'none')
+            if (authManager.isAuthenticated)
+              SizedBox(width: kDefaultPadding / 4),
+            (authManager.isAuthenticated)
                 ? TextButton.icon(
                     icon: Icon(
                       Icons.logout,
@@ -85,7 +86,7 @@ class Header extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      logout(logoutUrl);
+                      authManager.logout();
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (context) => LoginScreen()),

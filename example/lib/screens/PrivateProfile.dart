@@ -46,11 +46,8 @@ import 'package:solid_auth_example/models/SolidApi.dart' as rest_api;
 import 'package:solid_auth_example/screens/ProfileInfo.dart';
 
 class PrivateProfile extends StatefulWidget {
-  final Map authData; // Authentication data
-  final String webId; // User WebId
-
-  const PrivateProfile({Key? key, required this.authData, required this.webId})
-      : super(key: key);
+  final SolidAuthManager authManager;
+  const PrivateProfile({Key? key, required this.authManager}) : super(key: key);
 
   @override
   State<PrivateProfile> createState() => _PrivateProfileState();
@@ -109,8 +106,7 @@ class _PrivateProfileState extends State<PrivateProfile> {
     );
   }
 
-  Widget _loadedScreen(
-      Object profInfo, String webId, String logoutUrl, Map authData) {
+  Widget _loadedScreen(Object profInfo, String webId, SolidAuthData authData) {
     // Read profile info from the turtle file
     PodProfile podProfile = PodProfile(profInfo.toString());
 
@@ -154,17 +150,18 @@ class _PrivateProfileState extends State<PrivateProfile> {
       color: Colors.white,
       child: Column(
         children: [
-          Header(mainDrawer: _scaffoldKey, logoutUrl: logoutUrl),
+          Header(mainDrawer: _scaffoldKey, authManager: widget.authManager),
           Divider(thickness: 1),
           Expanded(
             child: SingleChildScrollView(
                 controller: ScrollController(),
                 padding: EdgeInsets.all(kDefaultPadding * 1.5),
                 child: ProfileInfo(
-                    profData: profData,
-                    profType: 'private',
-                    webId: webId,
-                    authData: authData)),
+                  profData: profData,
+                  authManager: widget.authManager,
+                  profType: 'private',
+                  webId: webId,
+                )),
           )
         ],
       ),
@@ -173,41 +170,21 @@ class _PrivateProfileState extends State<PrivateProfile> {
 
   @override
   Widget build(BuildContext context) {
-    Map authData = widget.authData;
-    String webId = widget.webId;
-    String logoutUrl = authData['logoutUrl'];
+    SolidAuthData authData = widget.authManager.authData!;
+    String webId = authData.webId;
 
-    var rsaInfo = authData['rsaInfo'];
-    var rsaKeyPair = rsaInfo['rsa'];
-    var publicKeyJwk = rsaInfo['pubKeyJwk'];
-
-    String accessToken = authData['accessToken'];
-    //Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken);
-
-    // Get profile
+    // Get profile url
     String profCardUrl = webId.replaceAll('#me', '');
-    String dPopToken =
-        genDpopToken(profCardUrl, rsaKeyPair, publicKeyJwk, 'GET');
 
     return Scaffold(
       key: _scaffoldKey,
-      // drawer: ConstrainedBox(
-      //   constraints: BoxConstraints(maxWidth: 300),
-      //   child: SideMenu(authData: authData, webId: webId)
-      // ),
-      // endDrawer: ConstrainedBox(
-      //   constraints: BoxConstraints(maxWidth: 400),
-      //   child: ListOfSurveys(authData: authData, webId: webId)
-      // ),
       body: SafeArea(
         child: FutureBuilder(
-            future:
-                rest_api.fetchPrvProfile(profCardUrl, accessToken, dPopToken),
+            future: rest_api.fetchPrvProfile(profCardUrl, authData),
             builder: (context, snapshot) {
               Widget returnVal;
-              if (snapshot.connectionState == ConnectionState.done) {
-                returnVal =
-                    _loadedScreen(snapshot.data!, webId, logoutUrl, authData);
+              if (snapshot.hasData) {
+                returnVal = _loadedScreen(snapshot.data!, webId, authData);
               } else {
                 returnVal = _loadingScreen();
               }

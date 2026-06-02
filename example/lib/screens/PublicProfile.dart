@@ -36,12 +36,11 @@ library;
 // Flutter imports:
 import 'package:flutter/material.dart';
 
-//import 'package:solid_auth_example/models/RestAPI.dart';
-import 'package:solid_auth/solid_auth.dart';
+import 'package:http/http.dart' as http;
 
-import 'package:solid_auth_example/components/Header.dart';
 // Project imports:
 import 'package:solid_auth_example/models/Constants.dart';
+// import 'package:solid_auth_example/components/Header.dart';
 import 'package:solid_auth_example/models/GetRdfData.dart';
 import 'package:solid_auth_example/screens/ProfileInfo.dart';
 
@@ -56,6 +55,26 @@ class PublicProfile extends StatefulWidget {
 
 class _PublicProfileState extends State<PublicProfile> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Get public profile information from webId
+  Future<String> _fetchProfileData(String profUrl) async {
+    final response = await http.get(
+      Uri.parse(profUrl),
+      headers: <String, String>{
+        'Content-Type': 'text/turtle',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      /// If the server did return a 200 OK response,
+      /// then parse the JSON.
+      return response.body;
+    } else {
+      /// If the server did not return a 200 OK response,
+      /// then throw an exception.
+      throw Exception('Failed to load data! Try again in a while.');
+    }
+  }
 
   // Loading widget
   Widget _loadingScreen() {
@@ -146,7 +165,7 @@ class _PublicProfileState extends State<PublicProfile> {
       color: Colors.white,
       child: Column(
         children: [
-          Header(mainDrawer: _scaffoldKey, logoutUrl: 'none'),
+          //Header(mainDrawer: _scaffoldKey, authData: ),
           Divider(thickness: 1),
           Expanded(
             child: SingleChildScrollView(
@@ -166,7 +185,7 @@ class _PublicProfileState extends State<PublicProfile> {
       key: _scaffoldKey,
       body: SafeArea(
         child: FutureBuilder(
-            future: fetchProfileData(
+            future: _fetchProfileData(
                 webId), // Get profile data (.ttl file) from the webId
             builder: (context, snapshot) {
               Widget returnVal;

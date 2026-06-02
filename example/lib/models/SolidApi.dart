@@ -38,15 +38,22 @@ import 'dart:async';
 
 // Package imports:
 import 'package:http/http.dart' as http;
+import 'package:solid_auth/solid_auth.dart';
 
 // Get private profile information using access and dPoP tokens
 Future<String> fetchPrvProfile(
-    String profCardUrl, String accessToken, String dPopToken) async {
+    String profCardUrl, SolidAuthData authData) async {
+  final dPopToken = await DpopTokenGenerator.generateForRequest(
+    endpointUrl: profCardUrl,
+    httpMethod: 'GET',
+    accessToken: authData.accessToken,
+  );
+
   final profResponse = await http.get(
     Uri.parse(profCardUrl),
     headers: <String, String>{
       'Accept': '*/*',
-      'Authorization': 'DPoP $accessToken',
+      'Authorization': 'DPoP ${authData.accessToken}',
       'Connection': 'keep-alive',
       'DPoP': '$dPopToken',
     },

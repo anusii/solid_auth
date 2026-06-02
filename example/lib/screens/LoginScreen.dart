@@ -1,8 +1,6 @@
 /// SolidPod library to support privacy first data store on Solid Servers
 ///
-// Time-stamp: <Wednesday 2025-09-17 09:19:35 +1000 Graham Williams>
-///
-/// Copyright (C) 2025, Software Innovation Institute ANU
+/// Copyright (C) 2026, Software Innovation Institute ANU
 ///
 /// Licensed under the MIT License (the "License").
 ///
@@ -26,7 +24,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 ///
-/// Authors: AUTHORS
+/// Authors: Anushka Vidanage
 
 // Add the library directive as we have doc entries above. We publish the above
 // meta doc lines in the docs.
@@ -36,7 +34,6 @@ library;
 // Flutter imports:
 import 'package:flutter/material.dart';
 
-import 'package:jwt_decoder/jwt_decoder.dart';
 //import 'package:solid_auth_example/models/RestAPI.dart';
 //import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth/solid_auth.dart';
@@ -212,7 +209,8 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
           onPressed: () async => launchIssuerReg(
-              (await getIssuer(_webIdTextController.text)).toString()),
+              (await WebIdUtils.getIssuer(_webIdTextController.text))
+                  .toString()),
           child: Text(
             'GET A POD',
             style: TextStyle(
@@ -236,44 +234,66 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             onPressed: () async {
-              // Get issuer URI
-              String _issuerUri = await getIssuer(_webIdTextController.text);
+              // Define Solid Auth Manager
+              final authManager = SolidAuthManager(
+                config: SolidOidcConfig(
+                  /// Custom URI schemes defined depending on the platform
+                  /// [clientId] parameter should point to a `jsonld` document
+                  /// containing the required authentication details.
+                  /// For example see: https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld
+                  ///
+                  /// redirectUris for each platform defined below should match
+                  /// the redirect uris defined on the clientId document above
+                  ///
+                  /// Client ID document hosted on web. Having a separate document for a client app
+                  /// will prevent the app from requiring to do dynamic client registration everytime
+                  /// app logs in
+                  clientId:
+                      'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
 
-              // Define scopes. Also possible scopes -> webid, email, api
-              final List<String> _scopes = <String>[
-                'openid',
-                'profile',
-                'offline_access',
-                'webid',
-              ];
+                  /// Use the following schemes for defining redirect uris
+                  /// Also refer to the oidc documentation
+                  /// at: https://bdaya-dev.github.io/oidc/oidc-getting-started/
+                  ///   On mobile: a custom-scheme URI registered with the OS (eg: com.example.solid.auth.example://redirect)
+                  ///   On web: the path to your redirect.html (eg: https://anushkavidanage.github.io/solid_auth/example_app/redirect.html)
+                  ///   On desktop: localhost as per oidc documentation (eg: http://localhost:0/redirect)
+                  redirectUri: Uri.parse('http://localhost:0/redirect'),
+
+                  /// Use the same redirect uris used above for corresponding plaform
+                  postLogoutRedirectUri: Uri.parse(
+                      'http://localhost:0/redirect'), //Uri.parse('${appUrlScheme}://logout'),
+
+                  /// Solid-OIDC scopes. Webid is always added automatically
+                  scopes: SolidScopes.defaultScopes,
+                ),
+              );
 
               // Authentication process for the POD issuer
-              var authData =
-                  await authenticate(Uri.parse(_issuerUri), _scopes, context);
+              try {
+                // getIssuer() + OidcUserManager.init() + loginAuthorizationCodeFlow()
+                // are all handled internally.
+                await authManager.authenticate(webIdController.text);
 
-              if (authData.containsKey('error')) {
+                if (authManager.authData != null) {
+                  // Navigate to the profile through main screen
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PrivateScreen(
+                              authManager: authManager,
+                            )),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Login failed! \n Try again in few seconds'),
+                    duration: const Duration(milliseconds: 3000),
+                  ));
+                }
+              } on SolidAuthException catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: const Text('You cancelled the login!'),
+                  content: Text('Login failed! \n ${e.message})'),
                   duration: const Duration(milliseconds: 3000),
                 ));
-              } else {
-                // Decode access token to get the correct webId
-                String accessToken = authData['accessToken'];
-                Map<String, dynamic> decodedToken =
-                    JwtDecoder.decode(accessToken);
-                String webId = decodedToken.containsKey('webid')
-                    ? decodedToken['webid']
-                    : decodedToken['sub'];
-
-                // Navigate to the profile through main screen
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => PrivateScreen(
-                            authData: authData,
-                            webId: webId,
-                          )),
-                );
               }
             },
             child: Text(

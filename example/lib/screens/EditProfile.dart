@@ -47,12 +47,12 @@ import 'package:solid_auth_example/models/SolidApi.dart';
 import 'package:solid_auth_example/screens/PrivateScreen.dart';
 
 class EditProfile extends StatefulWidget {
-  final Map authData;
+  final SolidAuthManager authManager;
   final String webId;
   final Map profData;
   const EditProfile({
     Key? key,
-    required this.authData,
+    required this.authManager,
     required this.webId,
     required this.profData,
   }) : super(key: key);
@@ -81,14 +81,12 @@ class _EditProfileState extends State<EditProfile> {
 
   @override
   Widget build(BuildContext context) {
-    String logoutUrl = widget.authData['logoutUrl'];
-
     return Scaffold(
       key: _scaffoldKey,
       body: SafeArea(
         child: Column(
           children: [
-            Header(mainDrawer: _scaffoldKey, logoutUrl: logoutUrl),
+            Header(mainDrawer: _scaffoldKey, authManager: widget.authManager),
             Divider(thickness: 1),
             Expanded(
               child: SingleChildScrollView(
@@ -137,8 +135,7 @@ class _EditProfileState extends State<EditProfile> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) => PrivateScreen(
-                                                authData: widget.authData,
-                                                webId: widget.webId,
+                                                authManager: widget.authManager,
                                               )),
                                     );
                                   },
@@ -163,25 +160,22 @@ class _EditProfileState extends State<EditProfile> {
                               ),
                               ElevatedButton(
                                   onPressed: () async {
-                                    var rsaInfo = widget.authData['rsaInfo'];
+                                    final authData =
+                                        widget.authManager.authData!;
 
                                     // Get access token
-                                    String accessToken =
-                                        widget.authData['accessToken'];
-                                    // Map<String, dynamic> decodedToken =
-                                    //     JwtDecoder.decode(accessToken);
-
-                                    // Get RSA public/private key pair
-                                    var rsaKeyPair = rsaInfo['rsa'];
-                                    var publicKeyJwk = rsaInfo['pubKeyJwk'];
+                                    String accessToken = authData.accessToken;
 
                                     // Get profile URI
                                     String profCardUrl =
                                         widget.webId.replaceAll('#me', '');
 
-                                    // Generate DPoP token
-                                    String dPopToken = genDpopToken(profCardUrl,
-                                        rsaKeyPair, publicKeyJwk, 'PATCH');
+                                    String dPopToken = await DpopTokenGenerator
+                                        .generateForRequest(
+                                      endpointUrl: profCardUrl,
+                                      httpMethod: 'PATCH',
+                                      accessToken: accessToken,
+                                    );
 
                                     List attrList = [
                                       'name',
@@ -281,8 +275,7 @@ class _EditProfileState extends State<EditProfile> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) => PrivateScreen(
-                                                authData: widget.authData,
-                                                webId: widget.webId,
+                                                authManager: widget.authManager,
                                               )),
                                     );
                                   },

@@ -1,6 +1,6 @@
 /// Support for flutter apps authenticating to a Solid server.
 ///
-/// Copyright (C) 2025, Software Innovation Institute, ANU.
+/// Copyright (C) 2026, Software Innovation Institute, ANU.
 ///
 /// Licensed under the MIT License (the "License").
 ///
@@ -26,7 +26,29 @@
 ///
 /// Authors: Anushka Vidanage
 
-library;
+/// Solid Auth — Solid-OIDC authentication flow for Flutter
+/// Built on package:oidc (https://pub.dev/packages/oidc)
+/// Inspired by the package (https://pub.dev/packages/solid_oidc_auth)
+///
+/// Main entry point. Import this file to access the public API:
+///
+/// ```dart
+/// import 'package:solid_auth/solid_auth.dart';
+/// ```
+library solid_auth;
 
-export 'solid_auth_client.dart';
-export 'solid_auth_issuer.dart';
+// Public models
+export 'src/models/solid_auth_data.dart';
+export 'src/models/solid_provider_metadata.dart';
+
+// Core auth functionality. The primary API consumers interact with
+export 'src/auth/solid_auth_manager.dart';
+export 'src/auth/solid_oidc_manager_factory.dart';
+
+// DPoP token generation
+export 'src/dpop/dpop_token_generator.dart';
+export 'src/dpop/dpop_key_manager.dart';
+
+// Utilities
+export 'src/utils/webid_utils.dart';
+export 'src/utils/solid_scopes.dart';
