@@ -4,11 +4,8 @@
 # Localhost OAuth callbacks used in integration tests
 
 http://localhost:44007/
-
 http://localhost:8000/
-
 http://localhost/
-
 http://localhost:0/redirect
 
 # POD OAuth endpoints that require authentication parameters
@@ -19,6 +16,9 @@ https://pods.dev.solidcommunity.au/.oidc/token
 # Example POD URLs that are protected resources
 
 https://pods.solidcommunity.au/my-moviestar/profile/card#me
+https://alice.solidcommunity.net/private/notes.ttl
+https://solidcommunity.net/token
+https://solidproject.org/TR/solid-oidc
 
 # POD server base URL - has temporary availability issues.
 
