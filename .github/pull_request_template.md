@@ -6,7 +6,7 @@
 <!--- Describe why this change is required -->
 
 ### Related Issues
-<!--- If it fixes an open issue, please link to the issue here. -->
+<!--- If it fixes an open issue(s), please link to the issue here. -->
 
 ### Type of Change
 

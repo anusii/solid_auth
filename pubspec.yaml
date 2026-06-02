@@ -1,6 +1,6 @@
 name: solid_auth
 description: Authenticate to a Solid POD server using Solid-OIDC, built on the certified oidc package.
-version: 0.2.0
+version: 1.0.0
 homepage: https://github.com/anusii/solid_auth
 repository: https://github.com/anusii/solid_auth
 
