@@ -155,11 +155,11 @@ Future<http.Response> getPrivateResource(
 
 `redirectUri` and `postLogoutRedirectUri` must be registered in your [client ID document](https://solid.github.io/solid-oidc/#clientids-document) (`client-profile.jsonld`) and match the correct format for each platform:
 
-| Platform | URI format | Notes |
-|---|---|---|
-| Web | `https://your-domain/redirect.html` | Must be same origin as the app - `oidc` uses `BroadcastChannel` (same-origin only) |
-| Android / iOS | `com.example.app://redirect` | Custom URI scheme registered with the OS |
-| Windows / Linux / macOS | `http://localhost:4400/redirect` | **Fixed port required** - see below |
+| Platform                | URI format                          | Notes                                                                              |
+| ----------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- |
+| Web                     | `https://your-domain/redirect.html` | Must be same origin as the app - `oidc` uses `BroadcastChannel` (same-origin only) |
+| Android / iOS           | `com.example.app://redirect`        | Custom URI scheme registered with the OS                                           |
+| Windows / Linux / macOS | `http://localhost:4400/redirect`    | **Fixed port required** - see below                                                |
 
 ### Desktop: use a fixed port
 
@@ -189,12 +189,12 @@ For Android, iOS, and other platform-specific setup steps (manifest entries, URL
 > [!IMPORTANT]
 > Upgrading from `0.1.x` to `0.2.x` is a **breaking change**. The underlying architecture has been re-engineered. The forked `openid_client` is replaced by the OpenID-certified `package:oidc`, and the top-level `authenticate()` function is replaced by `SolidAuthManager`. Please review the full README and use the table below to update your call sites.
 
-| Old (0.1.x) | New (0.2.x) |
-|---|---|
-| `String issuer = await getIssuer(webId)` | `WebIdUtils.getIssuer(webId)` (same signature) |
-| `var data = await authenticate(issuerUri, scopes)` | `await SolidAuthManager.authenticate(webIdOrIssuer)` - returns `SolidAuthData` |
-| `data['accessToken']` | `authData.accessToken` |
-| `data['idToken']` | `authData.idToken` |
-| `genDpopToken(url, keyPair, jwk, method)` | `DpopTokenGenerator.generateForRequest(endpointUrl:, httpMethod:, accessToken:, keyManager: auth.keyManager)` |
-| `fetchProfileData(webId)` | Removed - use `http` + parse the Turtle response directly |
-| *(new)* | `auth.tryRestoreSession()` - silent session restore on app startup |
+| Old (0.1.x)                                        | New (0.2.x)                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `String issuer = await getIssuer(webId)`           | `WebIdUtils.getIssuer(webId)` (same signature)                                                                |
+| `var data = await authenticate(issuerUri, scopes)` | `await SolidAuthManager.authenticate(webIdOrIssuer)` - returns `SolidAuthData`                                |
+| `data['accessToken']`                              | `authData.accessToken`                                                                                        |
+| `data['idToken']`                                  | `authData.idToken`                                                                                            |
+| `genDpopToken(url, keyPair, jwk, method)`          | `DpopTokenGenerator.generateForRequest(endpointUrl:, httpMethod:, accessToken:, keyManager: auth.keyManager)` |
+| `fetchProfileData(webId)`                          | Removed - use `http` + parse the Turtle response directly                                                     |
+| *(new)*                                            | `auth.tryRestoreSession()` - silent session restore on app startup                                            |
