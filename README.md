@@ -94,6 +94,11 @@ final dpop = await DpopTokenGenerator.generateForRequest(
 await auth.logout();
 ```
 
+
+`tryRestoreSession()` returns `null` if no session exists, if the refresh token has expired, or if any storage error occurs (in which case the stored session is cleared so the next login starts clean).
+
+Calling `logout()` or `forgetUser()` always clears the stored session.
+
 ---
 
 ## Session Restore
