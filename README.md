@@ -97,6 +97,29 @@ Calling `logout()` or `forgetUser()` always clears the stored session.
 
 ---
 
+## Session Restore
+
+After a successful login, `solid_auth` automatically saves the session (OIDC tokens + DPoP key pair) to platform-native secure storage. On the next app launch you can resume without requiring the user to log in again:
+
+```dart
+// Call this in initState before showing the login UI.
+final auth = SolidAuthManager(config: SolidOidcConfig(...));
+
+final data = await auth.tryRestoreSession();
+if (data != null) {
+  // Valid session found — navigate directly to the authenticated screen.
+  print('Welcome back, ${data.webId}');
+} else {
+  // No stored session — show the login screen.
+}
+```
+
+`tryRestoreSession()` returns `null` if no session exists, if the refresh token has expired, or if any storage error occurs (in which case the stored session is cleared so the next login starts clean).
+
+Calling `logout()` or `forgetUser()` always clears the stored session.
+
+---
+
 ## DPoP for Resource Requests
 
 Every request to a Solid server protected resource needs both an

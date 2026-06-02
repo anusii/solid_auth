@@ -31,6 +31,7 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:oidc/oidc.dart';
 
+import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
 import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/models/solid_auth_data.dart';
@@ -105,6 +106,8 @@ class SolidAuthManager {
   SolidAuthData? authData;
 
   OidcUserManager? _oidcManager;
+
+  final _sessionStore = SolidAuthSessionStore();
 
   /// The [DpopKeyManager] created during [initForIssuer].
   ///
@@ -190,7 +193,21 @@ class SolidAuthManager {
       throw const SolidAuthTokenException('Login cancelled or failed.');
     }
 
-    return _mapUserToAuthData(user, issuerUri);
+    final authResult = _mapUserToAuthData(user, issuerUri);
+
+    // Persist issuer, scopes, and DPoP keys so tryRestoreSession() can
+    // silently resume this session on the next app launch.
+    final effectiveScopes = scopeOverride != null
+        ? _configWithScopes(scopeOverride).scopes
+        : config.scopes;
+    await _sessionStore.saveSession(
+      issuerUri: issuerUri,
+      scopes: effectiveScopes,
+      privateKeyPem: _keyManager!.keyPair.privateKey,
+      publicKeyPem: _keyManager!.keyPair.publicKey,
+    );
+
+    return authResult;
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -244,10 +261,100 @@ class SolidAuthManager {
     _log.fine('OidcUserManager ready!');
   }
 
+  /// Attempts to restore a previously saved authentication session without
+  /// user interaction.
+  ///
+  /// Call this on app startup before showing the login UI:
+  ///
+  /// ```dart
+  /// final auth = SolidAuthManager(config: SolidOidcConfig(...));
+  /// final data = await auth.tryRestoreSession();
+  /// if (data != null) {
+  ///   // Session restored — navigate directly to the authenticated screen.
+  /// } else {
+  ///   // No valid session found — show the login screen.
+  /// }
+  /// ```
+  ///
+  /// ## How restoration works
+  ///
+  /// 1. Loads the previously saved issuer URI, scopes, and DPoP RSA key pair
+  ///    from secure storage.
+  /// 2. Calls [DpopKeyManager.restoreFromPem] to reinstate the original key
+  ///    pair **before** [OidcUserManager] is created.  This ensures the DPoP
+  ///    hook signs proofs with the key whose thumbprint (`cnf.jkt`) is
+  ///    embedded in the persisted access token.
+  /// 3. Calls [initForIssuer], which internally calls
+  ///    `OidcUserManager.init()`.  That triggers `loadCachedTokens()` in
+  ///    `package:oidc`, which restores the OIDC tokens from secure storage
+  ///    and transparently refreshes them if they have expired (provided a
+  ///    refresh token is available).
+  /// 4. Returns [currentAuthData] — non-null means the session is live.
+  ///
+  /// Returns `null` if no stored session exists, if the stored tokens have
+  /// expired and cannot be refreshed, or if any error occurs during restore
+  /// (in which case the stored session is cleared to avoid repeated failures).
+  Future<SolidAuthData?> tryRestoreSession() async {
+    _log.info('Attempting to restore previous session');
+
+    final session = await _sessionStore.loadSession();
+    if (session == null) {
+      _log.fine('No stored session found');
+      return null;
+    }
+
+    try {
+      // 1. Restore the DPoP key pair BEFORE creating OidcUserManager.
+      //    If we let getInstance() run first it generates a fresh key whose
+      //    thumbprint won't match the cnf.jkt in the persisted access token.
+      await DpopKeyManager.restoreFromPem(
+        privateKeyPem: session.privateKeyPem,
+        publicKeyPem: session.publicKeyPem,
+      );
+
+      // 2. Initialise OidcUserManager for the stored issuer.
+      //    OidcUserManager.init() automatically calls loadCachedTokens(),
+      //    restoring OIDC tokens and refreshing them if expired.
+      await initForIssuer(session.issuerUri, scopeOverride: session.scopes);
+
+      // 3. Return current auth data — non-null means restore succeeded.
+      final data = currentAuthData;
+      if (data != null) {
+        authData = data;
+        _log.info('Session restored for: ${data.webId}');
+      } else {
+        _log.fine('Stored tokens not found or could not be refreshed - '
+            'clearing session state');
+        // Clear the persisted session so subsequent tryRestoreSession() calls
+        // don't attempt (and fail) again.  Also reset the OIDC manager so that
+        // the next login() call creates a completely fresh OidcUserManager with
+        // no stale currentUser - this prevents an outdated id_token_hint from
+        // being sent in the authorization request, which can cause CSS to
+        // throw an error when its oidc-provider session has expired.
+        // (e.g. after a server restart).
+        await _sessionStore.clearSession();
+        DpopKeyManager.clear();
+        _oidcManager = null;
+        _keyManager = null;
+      }
+      return data;
+    } catch (e, stack) {
+      _log.warning(
+        'Session restore failed — clearing stored session',
+        e,
+        stack,
+      );
+      await _sessionStore.clearSession();
+      DpopKeyManager.clear();
+      return null;
+    }
+  }
+
   /// Logs out the user from the identity provider and clears local tokens.
   Future<void> logout() async {
     _log.info('Logging out');
     await _oidcManager?.logout();
+    await _sessionStore.clearSession();
     DpopKeyManager.clear(); // rotate key on logout for forward secrecy
     _keyManager = null;
   }
@@ -255,6 +362,7 @@ class SolidAuthManager {
   /// Clears local token state without contacting the identity provider.
   Future<void> forgetUser() async {
     await _oidcManager?.forgetUser();
+    await _sessionStore.clearSession();
   }
 
   /// Disposes the underlying [OidcUserManager]. Call this when the auth

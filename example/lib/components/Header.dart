@@ -85,12 +85,17 @@ class Header extends StatelessWidget {
                         color: Colors.black,
                       ),
                     ),
-                    onPressed: () {
-                      authManager.logout();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
-                      );
+                    onPressed: () async {
+                      // Await logout so the browser completes the end-session
+                      // redirect before we navigate away.
+                      await authManager.logout();
+                      if (context.mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => LoginScreen()),
+                        );
+                      }
                     },
                   )
                 : IconButton(

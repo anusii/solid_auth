@@ -45,14 +45,88 @@ import 'package:solid_auth_example/models/Constants.dart';
 import 'package:solid_auth_example/screens/PrivateScreen.dart';
 import 'package:solid_auth_example/screens/PublicScreen.dart';
 
-// ignore: must_be_immutable
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   // Sample web ID to check the functionality
-  var webIdController = TextEditingController()
+  final _webIdController = TextEditingController()
     ..text = 'https://pods.solidcommunity.au/';
+
+  /// Whether the app is currently checking for a previously saved session.
+  bool _isRestoringSession = true;
+
+  /// The [SolidAuthManager] is created once and reused for both the
+  /// automatic session-restore check and the manual login button tap.
+  late final SolidAuthManager _authManager = SolidAuthManager(
+    config: SolidOidcConfig(
+      /// Client ID document hosted on web. Having a separate document for
+      /// a client app will prevent the app from requiring dynamic client
+      /// registration on every login.
+      /// See: https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld
+      clientId:
+          'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
+
+      /// Redirect URIs vary by platform:
+      ///   Mobile:  custom-scheme URI  (e.g. com.example.solid.auth.example://redirect)
+      ///   Web:     redirect.html URL  (e.g. https://anushkavidanage.github.io/.../redirect.html)
+      ///   Desktop: fixed-port localhost (e.g. http://localhost:4400/redirect)
+      redirectUri: Uri.parse('http://localhost:4400/redirect'),
+
+      /// Must match the redirectUri for the current platform.
+      postLogoutRedirectUri: Uri.parse('http://localhost:4400/redirect'),
+
+      /// Solid-OIDC scopes. The `webid` scope is always added automatically.
+      scopes: SolidScopes.defaultScopes,
+    ),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _tryRestoreSession();
+  }
+
+  /// Checks for a previously saved session on startup.
+  ///
+  /// If valid tokens are found in secure storage, navigates directly to
+  /// [PrivateScreen] without requiring the user to log in again.
+  Future<void> _tryRestoreSession() async {
+    final data = await _authManager.tryRestoreSession();
+    if (!mounted) return;
+    if (data != null) {
+      // Session restored — go straight to the authenticated screen.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PrivateScreen(authManager: _authManager),
+        ),
+      );
+    } else {
+      // No valid session — show the login UI.
+      setState(() => _isRestoringSession = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _webIdController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Show a loading indicator while checking for a persisted session.
+    if (_isRestoringSession) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
         body: SafeArea(
             child: Container(
@@ -116,7 +190,7 @@ class LoginScreen extends StatelessWidget {
                             height: 20.0,
                           ),
                           TextFormField(
-                            controller: webIdController,
+                            controller: _webIdController,
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
                             ),
@@ -124,7 +198,7 @@ class LoginScreen extends StatelessWidget {
                           SizedBox(
                             height: 20.0,
                           ),
-                          createSolidLoginRow(context, webIdController),
+                          _buildLoginRow(context),
                           SizedBox(
                             height: 20.0,
                           ),
@@ -154,7 +228,7 @@ class LoginScreen extends StatelessWidget {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) => PublicScreen(
-                                              webId: webIdController.text,
+                                              webId: _webIdController.text,
                                             )),
                                   );
                                 },
@@ -183,9 +257,8 @@ class LoginScreen extends StatelessWidget {
   }
 
   // POD issuer registration page launch
-  launchIssuerReg(String _issuerUri) async {
-    var url = '$_issuerUri/register';
-
+  Future<void> _launchIssuerReg(String issuerUri) async {
+    final url = '$issuerUri/register';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     } else {
@@ -194,8 +267,7 @@ class LoginScreen extends StatelessWidget {
   }
 
   // Create login row for SOLID POD issuer
-  Row createSolidLoginRow(
-      BuildContext context, TextEditingController _webIdTextController) {
+  Row _buildLoginRow(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
@@ -208,9 +280,8 @@ class LoginScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          onPressed: () async => launchIssuerReg(
-              (await WebIdUtils.getIssuer(_webIdTextController.text))
-                  .toString()),
+          onPressed: () async => _launchIssuerReg(
+              (await WebIdUtils.getIssuer(_webIdController.text)).toString()),
           child: Text(
             'GET A POD',
             style: TextStyle(
@@ -234,53 +305,20 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             onPressed: () async {
-              // Define Solid Auth Manager
-              final authManager = SolidAuthManager(
-                config: SolidOidcConfig(
-                  /// Custom URI schemes defined depending on the platform
-                  /// [clientId] parameter should point to a `jsonld` document
-                  /// containing the required authentication details.
-                  /// For example see: https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld
-                  ///
-                  /// redirectUris for each platform defined below should match
-                  /// the redirect uris defined on the clientId document above
-                  ///
-                  /// Client ID document hosted on web. Having a separate document for a client app
-                  /// will prevent the app from requiring to do dynamic client registration everytime
-                  /// app logs in
-                  clientId:
-                      'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
-
-                  /// Use the following schemes for defining redirect uris
-                  /// Also refer to the oidc documentation
-                  /// at: https://bdaya-dev.github.io/oidc/oidc-getting-started/
-                  ///   On mobile: a custom-scheme URI registered with the OS (eg: com.example.solid.auth.example://redirect)
-                  ///   On web: the path to your redirect.html (eg: https://anushkavidanage.github.io/solid_auth/example_app/redirect.html)
-                  ///   On desktop: localhost as per oidc documentation (eg: http://localhost:0/redirect)
-                  redirectUri: Uri.parse('http://localhost:0/redirect'),
-
-                  /// Use the same redirect uris used above for corresponding plaform
-                  postLogoutRedirectUri: Uri.parse(
-                      'http://localhost:0/redirect'), //Uri.parse('${appUrlScheme}://logout'),
-
-                  /// Solid-OIDC scopes. Webid is always added automatically
-                  scopes: SolidScopes.defaultScopes,
-                ),
-              );
-
-              // Authentication process for the POD issuer
+              // Authentication process for the POD issuer.
+              // getIssuer() + OidcUserManager.init() + loginAuthorizationCodeFlow()
+              // are all handled internally by authManager.authenticate().
               try {
-                // getIssuer() + OidcUserManager.init() + loginAuthorizationCodeFlow()
-                // are all handled internally.
-                await authManager.authenticate(webIdController.text);
+                await _authManager.authenticate(_webIdController.text);
 
-                if (authManager.authData != null) {
-                  // Navigate to the profile through main screen
+                if (!mounted) return;
+
+                if (_authManager.authData != null) {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                         builder: (context) => PrivateScreen(
-                              authManager: authManager,
+                              authManager: _authManager,
                             )),
                   );
                 } else {
@@ -289,9 +327,10 @@ class LoginScreen extends StatelessWidget {
                     duration: const Duration(milliseconds: 3000),
                   ));
                 }
-              } on SolidAuthException catch (e) {
+              } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Login failed! \n ${e.message})'),
+                  content: Text('Login failed! \n $e'),
                   duration: const Duration(milliseconds: 3000),
                 ));
               }
