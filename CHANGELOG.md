@@ -3,9 +3,11 @@
 Recorded here are the high level changes for the Solid_Auth package.
 
 Guide: Each version update is recorded here with a short user-oriented
-description of the update. Updates in the 0.1.n series are heading
-toward a 0.2 release. The `[version timestamp user]` string is
+description of the update. Updates in the 1.0.n series are heading
+toward a 1.1 release. The `[version timestamp user]` string is
 utilised by the flutter version_widget package.
+
+## 1.1
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
