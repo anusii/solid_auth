@@ -11,7 +11,8 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
-+ Fix access token expiry calculation so background refresh works [1.0.1 20260609 anushkavidanage]
++ Fix access token expiry calculation so background 
+  refresh works [1.0.1 20260609 anushkavidanage]
 + WebID issuer discovery use OpenID certified [1.0.0 20260521 anushkavidanage]
 + Implementing Authorization Code + PKCE
 + DPoP key binding (RFC 9449)
