@@ -450,8 +450,19 @@ class SolidAuthManager {
     final refreshToken = token.refreshToken;
     final webId = _extractWebId(claims) ?? user.uid ?? '';
 
-    // Derive expiry: prefer explicit expiresAt, fall back to now + expires_in.
-    final expiresAt = DateTime.now().add(token.expiresIn!);
+    // Derive expiry from the token's creation time, NOT from "now".
+    //
+    // `token.expiresIn` is the original lifetime of the access token (the
+    // constant `expires_in` from the token response, e.g. 1 hour), not the
+    // remaining time. Adding it to `DateTime.now()` would recompute expiry as
+    // "now + lifetime" on every read, making `SolidAuthData.isExpired`
+    // perpetually false and defeating any expiry-based refresh logic.
+    //
+    // `token.calculateExpiresAt()` returns `creationTime + expiresIn`, the
+    // true expiry instant. Fall back to now + expiresIn only if the token
+    // carries no lifetime information at all.
+    final expiresAt = token.calculateExpiresAt() ??
+        DateTime.now().add(token.expiresIn ?? Duration.zero);
 
     return SolidAuthData(
       accessToken: accessToken ?? '',
