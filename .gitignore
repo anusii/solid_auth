@@ -312,3 +312,6 @@ app.*.symbols
 CLAUDE.md
 Claude.md
 .claude/*
+
+# Local dependency overrides for cross-repo development.
+pubspec_overrides.yaml

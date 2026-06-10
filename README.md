@@ -37,19 +37,6 @@ dependencies:
   solid_auth: ^0.2.0
 ```
 
-<!-- If your app targets **web**, also declare the `fast_rsa` WASM
-worker assets in your app's `pubspec.yaml` (the package omits them
-from its own asset list):
-
-```yaml
-flutter:
-  assets:
-    - packages/fast_rsa/web/assets/worker.js
-    - packages/fast_rsa/web/assets/wasm_exec.js
-    - packages/fast_rsa/web/assets/rsa.wasm
-```
--->
-
 ---
 
 ## Quick Start

@@ -1,4 +1,4 @@
-/// Support for flutter apps authenticating to a Solid server.
+/// Background execution fallback for platforms without `dart:isolate`.
 ///
 /// Copyright (C) 2026, Software Innovation Institute, ANU.
 ///
@@ -23,34 +23,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-///
-/// Authors: Anushka Vidanage
+library;
 
-/// Solid Auth — Solid-OIDC authentication flow for Flutter
-/// Built on package:oidc (https://pub.dev/packages/oidc)
-/// Inspired by the package (https://pub.dev/packages/solid_oidc_auth)
-///
-/// Main entry point. Import this file to access the public API:
-///
-/// ```dart
-/// import 'package:solid_auth/solid_auth.dart';
-/// ```
-library solid_auth;
-
-// Public models
-export 'src/models/solid_auth_data.dart';
-export 'src/models/solid_provider_metadata.dart';
-
-// Core auth functionality. The primary API consumers interact with
-export 'src/auth/solid_auth_manager.dart';
-export 'src/auth/solid_oidc_manager_factory.dart';
-
-// DPoP token generation
-export 'src/dpop/dpop_token_generator.dart';
-export 'src/dpop/dpop_key_manager.dart';
-export 'src/dpop/rsa_key_utils.dart'
-    show KeyPair, generateRsaKeyPair, rsaPublicKeyJwkFromPem;
-
-// Utilities
-export 'src/utils/webid_utils.dart';
-export 'src/utils/solid_scopes.dart';
+/// Runs [task] on the current isolate. The web has no isolate support, so
+/// CPU-intensive work (such as RSA key generation) runs inline and may
+/// briefly block the UI there.
+Future<R> runInBackground<R>(R Function() task) async => task();

@@ -30,8 +30,9 @@ library;
 // import 'dart:convert';
 // import 'dart:typed_data';
 // import 'package:crypto/crypto.dart';
-import 'package:fast_rsa/fast_rsa.dart';
 import 'package:logging/logging.dart';
+
+import 'package:solid_auth/src/dpop/rsa_key_utils.dart';
 
 final _log = Logger('solid_auth.DpopKeyManager');
 
@@ -114,7 +115,7 @@ class DpopKeyManager {
     required String privateKeyPem,
     required String publicKeyPem,
   }) async {
-    final publicKeyJwk = await RSA.convertPublicKeyToJWK(publicKeyPem);
+    final publicKeyJwk = rsaPublicKeyJwkFromPem(publicKeyPem);
     publicKeyJwk['alg'] = 'RS256';
     // KeyPair constructor order: KeyPair(publicKey, privateKey)
     _instance = DpopKeyManager._(
@@ -126,16 +127,9 @@ class DpopKeyManager {
 
   /// Generates a new key pair, replacing any cached instance.
   static Future<DpopKeyManager> _generate() async {
-    // final keyPair = await RSA.generate(2048);
-    // final jwk = await _buildJwk(keyPair.publicKey);
-    // final jkt = _computeJkt(jwk);
-    // _log.fine('DPoP key pair ready — jkt: $jkt');
-    // return DpopKeyManager._(keyPair: keyPair, publicKeyJwk: jwk, jkt: jkt);
-
     _log.fine('Generating RSA-2048 key pair for DPoP');
-    final keyPair = await RSA.generate(2048);
-    // final jwk = await _publicKeyToJwk(keyPair.publicKey);
-    final publicKeyJwk = await RSA.convertPublicKeyToJWK(keyPair.publicKey);
+    final keyPair = await generateRsaKeyPair();
+    final publicKeyJwk = rsaPublicKeyJwkFromPem(keyPair.publicKey);
 
     // Also adds the required `alg: "RS256"` parameter to the JWK
     publicKeyJwk['alg'] = 'RS256';

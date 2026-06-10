@@ -11,6 +11,7 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
++ Replace fast_rsa plugin with pure Dart RSA (pointycastle) for Swift Package Manager readiness [1.0.2 20260610 tonypioneer]
 + Fix token expiry calc for background refresh [1.0.1 20260609 anushkavidanage]
 + WebID issuer discovery use OpenID certified [1.0.0 20260521 anushkavidanage]
 + Implementing Authorization Code + PKCE
