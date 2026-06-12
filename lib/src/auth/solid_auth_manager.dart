@@ -32,6 +32,7 @@ import 'package:logging/logging.dart';
 import 'package:oidc/oidc.dart';
 
 import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
+import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/models/solid_auth_data.dart';
@@ -496,6 +497,27 @@ class SolidAuthManager {
       scopes: effectiveScopes,
       clientSecret: config.clientSecret,
       httpClient: config.httpClient,
+      uiLocales: config.uiLocales,
+      extraTokenHeaders: config.extraTokenHeaders,
+      prompt: config.prompt,
+      display: config.display,
+      acrValues: config.acrValues,
+      maxAge: config.maxAge,
+      expiryTolerance: config.expiryTolerance,
+      options: config.options,
+      frontChannelLogoutUri: config.frontChannelLogoutUri,
+      userInfoSettings: config.userInfoSettings,
+      frontChannelRequestListeningOptions:
+          config.frontChannelRequestListeningOptions,
+      refreshBefore: config.refreshBefore,
+      strictJwtVerification: config.strictJwtVerification,
+      getExpiresIn: config.getExpiresIn,
+      sessionManagementSettings: config.sessionManagementSettings,
+      getIdToken: config.getIdToken,
+      supportOfflineAuth: config.supportOfflineAuth,
+      hooks: config.hooks,
+      extraRevocationParameters: config.extraRevocationParameters,
+      extraRevocationHeaders: config.extraRevocationHeaders,
       extraTokenParameters: config.extraTokenParameters,
       extraAuthParameters: config.extraAuthParameters,
     );

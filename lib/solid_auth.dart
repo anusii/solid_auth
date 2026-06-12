@@ -44,6 +44,7 @@ export 'src/models/solid_provider_metadata.dart';
 // Core auth functionality. The primary API consumers interact with
 export 'src/auth/solid_auth_manager.dart';
 export 'src/auth/solid_oidc_manager_factory.dart';
+export 'src/auth/solid_oidc_config.dart';
 
 // DPoP token generation
 export 'src/dpop/dpop_token_generator.dart';
