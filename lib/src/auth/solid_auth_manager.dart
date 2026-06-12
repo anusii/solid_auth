@@ -30,9 +30,9 @@ library;
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:oidc/oidc.dart';
-import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 
 import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
+import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/models/solid_auth_data.dart';
