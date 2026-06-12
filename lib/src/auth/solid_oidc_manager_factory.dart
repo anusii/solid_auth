@@ -30,8 +30,8 @@ library;
 import 'package:logging/logging.dart';
 import 'package:oidc/oidc.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
-import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 
+import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/dpop/dpop_token_generator.dart';
 import 'package:solid_auth/src/models/solid_provider_metadata.dart';
