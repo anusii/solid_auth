@@ -39,10 +39,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 // Project imports:
-import 'package:solid_auth_example/models/Constants.dart';
-// import 'package:solid_auth_example/components/Header.dart';
-import 'package:solid_auth_example/models/GetRdfData.dart';
-import 'package:solid_auth_example/screens/ProfileInfo.dart';
+import 'package:solidautheg/models/Constants.dart';
+// import 'package:solidautheg/components/Header.dart';
+import 'package:solidautheg/models/GetRdfData.dart';
+import 'package:solidautheg/screens/ProfileInfo.dart';
 
 class PublicProfile extends StatefulWidget {
   final String webId;

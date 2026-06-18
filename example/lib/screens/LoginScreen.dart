@@ -34,16 +34,16 @@ library;
 // Flutter imports:
 import 'package:flutter/material.dart';
 
-//import 'package:solid_auth_example/models/RestAPI.dart';
+//import 'package:solidautheg/models/RestAPI.dart';
 //import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth/solid_auth.dart';
 // Package imports:
 import 'package:url_launcher/url_launcher.dart';
 
 // Project imports:
-import 'package:solid_auth_example/models/Constants.dart';
-import 'package:solid_auth_example/screens/PrivateScreen.dart';
-import 'package:solid_auth_example/screens/PublicScreen.dart';
+import 'package:solidautheg/models/Constants.dart';
+import 'package:solidautheg/screens/PrivateScreen.dart';
+import 'package:solidautheg/screens/PublicScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
