@@ -35,6 +35,7 @@ import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
 import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
+import 'package:solid_auth/src/utils/loopback_listener_guard.dart';
 import 'package:solid_auth/src/models/solid_auth_data.dart';
 import 'package:solid_auth/src/models/solid_provider_metadata.dart';
 import 'package:solid_auth/src/utils/solid_scopes.dart';
@@ -186,6 +187,22 @@ class SolidAuthManager {
     //   );
     //   await _oidcManager!.init();
     // }
+
+    // Release any loopback listener left bound by an abandoned login or
+    // logout flow; otherwise the fresh flow would crash with a
+    // SocketException when it tries to bind the same redirect port
+    // (Windows / Linux desktop).
+
+    final redirectPortsFree = await releaseStaleLoopbackListeners([
+      config.redirectUri,
+      if (config.postLogoutRedirectUri != null) config.postLogoutRedirectUri!,
+    ]);
+    if (!redirectPortsFree) {
+      throw const SolidAuthException(
+        'The login redirect port is in use by another application. '
+        'Close the application holding the port and try again.',
+      );
+    }
 
     _log.fine('Launching Authorization Code + PKCE flow');
     final user = await _oidcManager!.loginAuthorizationCodeFlow();
@@ -352,9 +369,29 @@ class SolidAuthManager {
   }
 
   /// Logs out the user from the identity provider and clears local tokens.
+  ///
+  /// Before launching the browser end-session flow, any loopback redirect
+  /// listener left behind by a previously abandoned flow is released, so a
+  /// repeated logout cannot crash with a port-in-use SocketException
+  /// (previously seen on Windows and Linux when the user ignored the
+  /// browser's sign-out page and logged out again). If the redirect port
+  /// cannot be freed at all, the identity-provider round-trip is skipped
+  /// and only local state is cleared.
   Future<void> logout() async {
     _log.info('Logging out');
-    await _oidcManager?.logout();
+    final redirectPortsFree = await releaseStaleLoopbackListeners([
+      if (config.postLogoutRedirectUri != null) config.postLogoutRedirectUri!,
+      config.redirectUri,
+    ]);
+    if (redirectPortsFree) {
+      await _oidcManager?.logout();
+    } else {
+      _log.warning(
+        'Post-logout redirect port unavailable — clearing the local '
+        'session without the browser round-trip.',
+      );
+      await _oidcManager?.forgetUser();
+    }
     await _sessionStore.clearSession();
     DpopKeyManager.clear(); // rotate key on logout for forward secrecy
     _keyManager = null;
