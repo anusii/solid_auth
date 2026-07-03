@@ -126,8 +126,7 @@ void main() {
 
       // An unrelated server answers requests but never closes.
 
-      final server =
-          await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
       unawaited(() async {
         await for (final request in server) {
           request.response.write('not an oidc listener');
