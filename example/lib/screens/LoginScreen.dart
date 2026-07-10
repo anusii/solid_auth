@@ -96,7 +96,8 @@ class _LoginScreenState extends State<LoginScreen> {
       /// Post-logout URI for the current platform. On native platforms this
       /// uses the `logout` path so it matches the client identifier document's
       /// `post_logout_redirect_uris` entry.
-      postLogoutRedirectUri: Uri.parse(_platformRedirectUri(nativePath: 'logout')),
+      postLogoutRedirectUri:
+          Uri.parse(_platformRedirectUri(nativePath: 'logout')),
 
       /// Solid-OIDC scopes. The `webid` scope is always added automatically.
       scopes: SolidScopes.defaultScopes,
