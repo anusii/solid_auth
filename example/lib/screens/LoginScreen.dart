@@ -85,8 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
       /// a client app will prevent the app from requiring dynamic client
       /// registration on every login.
       /// See: https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld
-      clientId:
-          'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
+      clientId: 'https://anusii.github.io/solidautheg/client-profile.jsonld',
 
       /// Redirect URI for the current platform, derived at runtime (see
       /// [_platformRedirectUri]): the served app's origin on web, a custom
