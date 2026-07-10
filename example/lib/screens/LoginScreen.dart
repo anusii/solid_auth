@@ -32,6 +32,7 @@
 library;
 
 // Flutter imports:
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 //import 'package:solidautheg/models/RestAPI.dart';
@@ -44,6 +45,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:solidautheg/models/Constants.dart';
 import 'package:solidautheg/screens/PrivateScreen.dart';
 import 'package:solidautheg/screens/PublicScreen.dart';
+
+/// The Solid-OIDC redirect URI for the current platform.
+String get _platformRedirectUri => kIsWeb
+    ? '${Uri.base.origin}/redirect.html'
+    : 'http://localhost:4400/redirect.html';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,14 +77,14 @@ class _LoginScreenState extends State<LoginScreen> {
       clientId:
           'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
 
-      /// Redirect URIs vary by platform:
-      ///   Mobile:  custom-scheme URI  (e.g. com.example.solid.auth.example://redirect)
-      ///   Web:     redirect.html URL  (e.g. https://anushkavidanage.github.io/.../redirect.html)
-      ///   Desktop: fixed-port localhost (e.g. http://localhost:4400/redirect)
-      redirectUri: Uri.parse('http://localhost:4400/redirect'),
+      /// Redirect URI for the current platform, derived at runtime so the web
+      /// redirect is always same-origin with the served app (see
+      /// [_platformRedirectUri]): the app's origin on web, a fixed-port
+      /// localhost loopback on desktop.
+      redirectUri: Uri.parse(_platformRedirectUri),
 
       /// Must match the redirectUri for the current platform.
-      postLogoutRedirectUri: Uri.parse('http://localhost:4400/redirect'),
+      postLogoutRedirectUri: Uri.parse(_platformRedirectUri),
 
       /// Solid-OIDC scopes. The `webid` scope is always added automatically.
       scopes: SolidScopes.defaultScopes,
