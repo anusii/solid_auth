@@ -31,7 +31,8 @@ import 'dart:convert';
 
 import 'package:logging/logging.dart';
 import 'package:oidc_core/oidc_core.dart';
-import 'package:oidc_default_store/oidc_default_store.dart';
+
+import 'package:solid_auth/src/auth/solid_auth_store.dart';
 
 final _log = Logger('solid_auth.SolidAuthSessionStore');
 
@@ -85,7 +86,10 @@ class SolidAuthSessionStore {
   static const _privateKeyKey = 'solid_auth_rsa_private';
   static const _publicKeyKey = 'solid_auth_rsa_public';
 
-  final _store = OidcDefaultStore();
+  // Platform-aware store: persistent (OS-backed) on native, in-memory on web
+  // so the DPoP private key is never written to localStorage (see
+  // [createSolidAuthStore]).
+  final OidcStore _store = createSolidAuthStore();
 
   /// Persists all parameters required to restore this session later.
   ///
@@ -96,7 +100,7 @@ class SolidAuthSessionStore {
     required String privateKeyPem,
     required String publicKeyPem,
   }) async {
-    if (!_store.didInit) await _store.init();
+    await _store.init();
     _log.fine('Saving session for issuer: $issuerUri');
     await _store.setMany(
       OidcStoreNamespace.secureTokens,
@@ -153,7 +157,7 @@ class SolidAuthSessionStore {
   ///
   /// Should be called on logout or when the session is no longer valid.
   Future<void> clearSession() async {
-    if (!_store.didInit) await _store.init();
+    await _store.init();
     _log.fine('Clearing stored session');
     await _store.removeMany(
       OidcStoreNamespace.secureTokens,

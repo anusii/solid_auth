@@ -32,6 +32,7 @@ import 'package:logging/logging.dart';
 import 'package:oidc/oidc.dart';
 
 import 'package:solid_auth/src/auth/solid_auth_session_store.dart';
+import 'package:solid_auth/src/auth/solid_auth_store.dart';
 import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 import 'package:solid_auth/src/auth/solid_oidc_manager_factory.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
@@ -170,6 +171,11 @@ class SolidAuthManager {
     required String issuerUri,
     List<String>? scopeOverride,
   }) async {
+    // On web, remove any DPoP private key / session parameters a previous
+    // persistent build may have left in localStorage. No-op on native.
+
+    await purgeLegacyWebSecrets();
+
     await initForIssuer(
       issuerUri,
       scopeOverride: scopeOverride,

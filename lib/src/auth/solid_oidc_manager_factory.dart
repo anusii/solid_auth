@@ -29,8 +29,8 @@ library;
 
 import 'package:logging/logging.dart';
 import 'package:oidc/oidc.dart';
-import 'package:oidc_default_store/oidc_default_store.dart';
 
+import 'package:solid_auth/src/auth/solid_auth_store.dart';
 import 'package:solid_auth/src/auth/solid_oidc_config.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/dpop/dpop_token_generator.dart';
@@ -174,7 +174,7 @@ abstract class SolidOidcManagerFactory {
         ? OidcUserManager(
             discoveryDocument: metadata.oidcMetadata,
             clientCredentials: clientAuth,
-            store: OidcDefaultStore(),
+            store: createSolidAuthStore(),
             settings: settings,
             httpClient: config.httpClient,
             keyStore: null,
@@ -185,7 +185,7 @@ abstract class SolidOidcManagerFactory {
               Uri.parse(issuerUri),
             ),
             clientCredentials: clientAuth,
-            store: OidcDefaultStore(),
+            store: createSolidAuthStore(),
             settings: settings,
             httpClient: config.httpClient,
             keyStore: null,
