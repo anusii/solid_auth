@@ -42,6 +42,10 @@ import 'package:solid_auth/src/utils/webid_utils.dart';
 
 final _log = Logger('solid_auth.SolidAuthManager');
 
+// Mirrors package:flutter's kIsWeb without depending on flutter (this
+// package only depends on it in dev_dependencies, for tests).
+const bool _kIsWeb = bool.fromEnvironment('dart.library.js_interop');
+
 /// High-level facade for Solid-OIDC authentication.
 ///
 /// Wraps [OidcUserManager] from `package:oidc` and adds Solid-specific
@@ -142,6 +146,43 @@ class SolidAuthManager {
     return _oidcManager!;
   }
 
+  // Cache populated by [prewarm] and consumed by [authenticate] so a
+  // same-value login skips straight to the redirect step.
+  String? _prewarmedWebIdOrIssuer;
+  String? _prewarmedIssuerUri;
+
+  /// Resolves [webIdOrIssuerUri]'s issuer and initialises the underlying
+  /// [OidcUserManager] (DPoP keys + discovery document) ahead of time, so a
+  /// later [authenticate] call with the same value can skip the WebID lookup
+  /// and discovery fetch entirely.
+  ///
+  /// On web, this matters for Safari: `window.open()` (triggered inside
+  /// [authenticate]'s call to `loginAuthorizationCodeFlow()`) must fire
+  /// within the same user-gesture handling as the login button's click.
+  /// Awaiting a WebID HTTP GET and an OIDC discovery-document GET first
+  /// pushes it past that window, so Safari's popup blocker silently blocks
+  /// it. Calling this ahead of the click — e.g. on login-screen init for a
+  /// fixed default server — removes those awaits from the click path.
+  ///
+  /// Call this speculatively; failures are swallowed since [authenticate]
+  /// will simply redo the work from scratch.
+  Future<void> prewarm(String webIdOrIssuerUri) async {
+    try {
+      final issuerUri = await WebIdUtils.getIssuer(
+        webIdOrIssuerUri,
+        httpClient: httpClient,
+      );
+      await initForIssuer(issuerUri);
+      _prewarmedWebIdOrIssuer = webIdOrIssuerUri;
+      _prewarmedIssuerUri = issuerUri;
+    } on Object catch (e) {
+      _log.fine(
+        'prewarm() failed for $webIdOrIssuerUri — '
+        'authenticate() will retry at login time: $e',
+      );
+    }
+  }
+
   /// ### Issuer-aware login
 
   /// Resolves the OIDC issuer from [webIdOrIssuerUri], if the given value is a
@@ -156,8 +197,10 @@ class SolidAuthManager {
   }) async {
     _log.info('Starting Solid-OIDC login for: $webIdOrIssuerUri');
 
-    final issuerUri =
-        await WebIdUtils.getIssuer(webIdOrIssuerUri, httpClient: httpClient);
+    final issuerUri = (_prewarmedWebIdOrIssuer == webIdOrIssuerUri &&
+            _prewarmedIssuerUri != null)
+        ? _prewarmedIssuerUri!
+        : await WebIdUtils.getIssuer(webIdOrIssuerUri, httpClient: httpClient);
     authData = await login(issuerUri: issuerUri, scopeOverride: scopeOverride);
 
     return authData;
@@ -187,17 +230,12 @@ class SolidAuthManager {
     //   await _oidcManager!.init();
     // }
 
-    _log.fine('Launching Authorization Code + PKCE flow');
-    final user = await _oidcManager!.loginAuthorizationCodeFlow();
-
-    if (user == null) {
-      throw const SolidAuthTokenException('Login cancelled or failed.');
-    }
-
-    final authResult = _mapUserToAuthData(user, issuerUri);
-
-    // Persist issuer, scopes, and DPoP keys so tryRestoreSession() can
-    // silently resume this session on the next app launch.
+    // Persist issuer, scopes, and DPoP keys *before* triggering the redirect
+    // below. With OidcPlatformSpecificOptions_Web_NavigationMode.samePage,
+    // the browser fully reloads the page for the redirect and this function
+    // never resumes — tryRestoreSession() on the next app launch depends on
+    // this already being written so OidcUserManager.init() can pick up the
+    // completed login from its pending-state check.
     final effectiveScopes = scopeOverride != null
         ? _configWithScopes(scopeOverride).scopes
         : config.scopes;
@@ -208,7 +246,22 @@ class SolidAuthManager {
       publicKeyPem: _keyManager!.keyPair.publicKey,
     );
 
-    return authResult;
+    _log.fine('Launching Authorization Code + PKCE flow');
+    // originalUri tells the web redirect.html page where to navigate back to
+    // once the flow completes. It defaults to redirectUri (the redirect.html
+    // page itself) when omitted, which matters for
+    // OidcPlatformSpecificOptions_Web_NavigationMode.samePage: without it,
+    // the browser would strand the user on redirect.html instead of
+    // returning to the app.
+    final user = await _oidcManager!.loginAuthorizationCodeFlow(
+      originalUri: _kIsWeb ? Uri.base : null,
+    );
+
+    if (user == null) {
+      throw const SolidAuthTokenException('Login cancelled or failed.');
+    }
+
+    return _mapUserToAuthData(user, issuerUri);
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
