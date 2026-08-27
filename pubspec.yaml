@@ -1,6 +1,6 @@
 name: solid_auth
 description: Authenticate to a Solid POD server using Solid-OIDC with certified oidc.
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/anusii/solid_auth
 repository: https://github.com/anusii/solid_auth
 
@@ -37,7 +37,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   clock: any
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
   jose: any
   mocktail: ^1.0.0
   openidconnect_web: any

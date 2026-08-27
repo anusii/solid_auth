@@ -32,18 +32,35 @@
 library;
 
 // Flutter imports:
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 
-//import 'package:solid_auth_example/models/RestAPI.dart';
+//import 'package:solidautheg/models/RestAPI.dart';
 //import 'package:solid_auth/solid_auth.dart';
 import 'package:solid_auth/solid_auth.dart';
 // Package imports:
 import 'package:url_launcher/url_launcher.dart';
 
 // Project imports:
-import 'package:solid_auth_example/models/Constants.dart';
-import 'package:solid_auth_example/screens/PrivateScreen.dart';
-import 'package:solid_auth_example/screens/PublicScreen.dart';
+import 'package:solidautheg/models/Constants.dart';
+import 'package:solidautheg/screens/PrivateScreen.dart';
+import 'package:solidautheg/screens/PublicScreen.dart';
+
+/// The Solid-OIDC redirect URI for the current platform.
+String _platformRedirectUri({String nativePath = 'redirect'}) {
+  if (kIsWeb) {
+    return '${Uri.base.origin}/redirect.html';
+  }
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.android:
+    case TargetPlatform.iOS:
+    case TargetPlatform.macOS:
+      return 'com.example.solidautheg://$nativePath';
+    default:
+      return 'http://localhost:4400/redirect.html';
+  }
+}
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -68,17 +85,18 @@ class _LoginScreenState extends State<LoginScreen> {
       /// a client app will prevent the app from requiring dynamic client
       /// registration on every login.
       /// See: https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld
-      clientId:
-          'https://anushkavidanage.github.io/solid_auth/example_app/client-profile.jsonld',
+      clientId: 'https://anusii.github.io/solidautheg/client-profile.jsonld',
 
-      /// Redirect URIs vary by platform:
-      ///   Mobile:  custom-scheme URI  (e.g. com.example.solid.auth.example://redirect)
-      ///   Web:     redirect.html URL  (e.g. https://anushkavidanage.github.io/.../redirect.html)
-      ///   Desktop: fixed-port localhost (e.g. http://localhost:4400/redirect)
-      redirectUri: Uri.parse('http://localhost:4400/redirect'),
+      /// Redirect URI for the current platform, derived at runtime (see
+      /// [_platformRedirectUri]): the served app's origin on web, a custom
+      /// scheme on Android/iOS/macOS, a localhost loopback on Windows/Linux.
+      redirectUri: Uri.parse(_platformRedirectUri()),
 
-      /// Must match the redirectUri for the current platform.
-      postLogoutRedirectUri: Uri.parse('http://localhost:4400/redirect'),
+      /// Post-logout URI for the current platform. On native platforms this
+      /// uses the `logout` path so it matches the client identifier document's
+      /// `post_logout_redirect_uris` entry.
+      postLogoutRedirectUri:
+          Uri.parse(_platformRedirectUri(nativePath: 'logout')),
 
       /// Solid-OIDC scopes. The `webid` scope is always added automatically.
       scopes: SolidScopes.defaultScopes,

@@ -38,10 +38,10 @@ import 'package:flutter/material.dart';
 
 import 'package:solid_auth/solid_auth.dart';
 
-import 'package:solid_auth_example/models/Constants.dart';
+import 'package:solidautheg/models/Constants.dart';
 // Project imports:
-import 'package:solid_auth_example/models/Responsive.dart';
-import 'package:solid_auth_example/screens/PrivateProfile.dart';
+import 'package:solidautheg/models/Responsive.dart';
+import 'package:solidautheg/screens/PrivateProfile.dart';
 
 // ignore: must_be_immutable
 class PrivateScreen extends StatelessWidget {

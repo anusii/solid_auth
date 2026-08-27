@@ -11,6 +11,7 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
++ Updated example using clientid from github [1.0.3 20260711 tonypioneer]
 + Add custom OIDC manager settings to enable token refresh [1.0.2 20260612 anushkavidanage]
 + Fix token expiry calc for background refresh [1.0.1 20260609 anushkavidanage]
 + WebID issuer discovery use OpenID certified [1.0.0 20260521 anushkavidanage]
