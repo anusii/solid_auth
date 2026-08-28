@@ -10,10 +10,13 @@ support/
 *~
 *.bak
 coverage
+/.metadata
 
 ARCHIVE
 ignore
 pubspec.yaml.*
+
+!templates/solidui/pubspec.yaml.tmpl
 
 .flutter-plugins*
 
