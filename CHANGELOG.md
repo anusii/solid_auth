@@ -11,6 +11,7 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
++ Streamline login logout [1.0.4 20260828 anushkavidanage]
 + Updated example using clientid from github [1.0.3 20260711 tonypioneer]
 + Add custom OIDC manager settings to enable token refresh [1.0.2 20260612 anushkavidanage]
 + Fix token expiry calc for background refresh [1.0.1 20260609 anushkavidanage]
