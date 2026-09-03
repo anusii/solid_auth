@@ -97,10 +97,7 @@ const bool _kIsWeb = bool.fromEnvironment('dart.library.js_interop');
 /// | `genDpopToken(...)`                  | `DpopTokenGenerator.generate(...)`         |
 ///
 class SolidAuthManager {
-  SolidAuthManager({
-    required this.config,
-    this.httpClient,
-  });
+  SolidAuthManager({required this.config, this.httpClient});
 
   final SolidOidcConfig config;
   final http.Client? httpClient;
@@ -197,7 +194,8 @@ class SolidAuthManager {
   }) async {
     _log.info('Starting Solid-OIDC login for: $webIdOrIssuerUri');
 
-    final issuerUri = (_prewarmedWebIdOrIssuer == webIdOrIssuerUri &&
+    final issuerUri =
+        (_prewarmedWebIdOrIssuer == webIdOrIssuerUri &&
             _prewarmedIssuerUri != null)
         ? _prewarmedIssuerUri!
         : await WebIdUtils.getIssuer(webIdOrIssuerUri, httpClient: httpClient);
@@ -213,10 +211,7 @@ class SolidAuthManager {
     required String issuerUri,
     List<String>? scopeOverride,
   }) async {
-    await initForIssuer(
-      issuerUri,
-      scopeOverride: scopeOverride,
-    );
+    await initForIssuer(issuerUri, scopeOverride: scopeOverride);
 
     // final effectiveConfig =
     //     scopeOverride != null ? _configWithScopes(scopeOverride) : config;
@@ -292,8 +287,9 @@ class SolidAuthManager {
 
     _log.fine('Initialising OidcUserManager for issuer: $issuerUri');
 
-    final effectiveConfig =
-        scopeOverride != null ? _configWithScopes(scopeOverride) : config;
+    final effectiveConfig = scopeOverride != null
+        ? _configWithScopes(scopeOverride)
+        : config;
 
     // SolidOidcManagerFactory.create returns a named record:
     //   (manager: OidcUserManager, keyManager: DpopKeyManager)
@@ -377,8 +373,10 @@ class SolidAuthManager {
         authData = data;
         _log.info('Session restored for: ${data.webId}');
       } else {
-        _log.fine('Stored tokens not found or could not be refreshed - '
-            'clearing session state');
+        _log.fine(
+          'Stored tokens not found or could not be refreshed - '
+          'clearing session state',
+        );
         // Clear the persisted session so subsequent tryRestoreSession() calls
         // don't attempt (and fail) again.  Also reset the OIDC manager so that
         // the next login() call creates a completely fresh OidcUserManager with
@@ -445,13 +443,13 @@ class SolidAuthManager {
   /// Emits `null` on logout and a [SolidAuthData] on login / token refresh.
   Stream<SolidAuthData?> get authChanges {
     return oidcManager.userChanges().map(
-          (user) => user == null
-              ? null
-              : _mapUserToAuthData(
-                  user,
-                  oidcManager.discoveryDocument.issuer.toString(),
-                ),
-        );
+      (user) => user == null
+          ? null
+          : _mapUserToAuthData(
+              user,
+              oidcManager.discoveryDocument.issuer.toString(),
+            ),
+    );
   }
 
   /// Manually triggers a token refresh. Returns the refreshed [SolidAuthData]
@@ -515,7 +513,8 @@ class SolidAuthManager {
     // `token.calculateExpiresAt()` returns `creationTime + expiresIn`, the
     // true expiry instant. Fall back to now + expiresIn only if the token
     // carries no lifetime information at all.
-    final expiresAt = token.calculateExpiresAt() ??
+    final expiresAt =
+        token.calculateExpiresAt() ??
         DateTime.now().add(token.expiresIn ?? Duration.zero);
 
     return SolidAuthData(

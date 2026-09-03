@@ -104,9 +104,9 @@ abstract class WebIdUtils {
     final client = httpClient ?? http.Client();
 
     try {
-      final discoveryUri = Uri.parse(issuerUri).replace(
-        path: '/.well-known/openid-configuration',
-      );
+      final discoveryUri = Uri.parse(
+        issuerUri,
+      ).replace(path: '/.well-known/openid-configuration');
 
       final response = await client.get(
         discoveryUri,

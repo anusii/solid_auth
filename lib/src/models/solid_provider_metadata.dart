@@ -75,8 +75,9 @@ class SolidProviderMetadata {
       registrationEndpoint: json['registration_endpoint'] != null
           ? Uri.parse(json['registration_endpoint'] as String)
           : null,
-      storageEndpoint:
-          json['storage'] != null ? Uri.parse(json['storage'] as String) : null,
+      storageEndpoint: json['storage'] != null
+          ? Uri.parse(json['storage'] as String)
+          : null,
     );
   }
 }

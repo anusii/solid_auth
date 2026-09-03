@@ -179,10 +179,7 @@ abstract class DpopTokenGenerator {
     }
 
     /// Create a json web token
-    final jwt = JWT(
-      payload,
-      header: tokenHead,
-    );
+    final jwt = JWT(payload, header: tokenHead);
 
     /// Sign the JWT using private key
     return jwt.sign(

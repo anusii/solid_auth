@@ -69,8 +69,8 @@ class SolidAuthData {
 
   /// Convenience: returns auth headers for a plain Bearer request (no DPoP).
   Map<String, String> get bearerHeaders => {
-        'Authorization': 'Bearer $accessToken',
-      };
+    'Authorization': 'Bearer $accessToken',
+  };
 
   @override
   String toString() =>
