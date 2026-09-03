@@ -178,7 +178,7 @@ class SolidOidcConfig {
   ///
   /// [frontChannelLogoutUri] must be set for this to work.
   final OidcFrontChannelRequestListeningOptions
-      frontChannelRequestListeningOptions;
+  frontChannelRequestListeningOptions;
 
   /// How early the token gets refreshed.
   ///
@@ -210,12 +210,12 @@ class SolidOidcConfig {
   /// Customized hooks to modify the user manager behavior.
   final OidcUserManagerHooks? hooks;
 
-  /// whether JWTs are strictly verified.
+  /// Legacy no-op, retained only for source compatibility.
   ///
-  /// If set to true, the library will throw an exception if a JWT is invalid.
-  ///
-  /// **Security Note**: This defaults to `true` for security. Only set to `false`
-  /// for development/testing or when working with non-compliant OIDC providers.
+  /// `package:oidc` 1.0+ removed the fail-open opt-out this used to control.
+  /// ID token signature verification is now unconditionally strict regardless
+  /// of this value. Kept as a field so existing call sites setting it don't
+  /// fail to compile; it is no longer read by [SolidOidcManagerFactory].
   final bool strictJwtVerification;
 
   /// overrides a token's expires_in value.

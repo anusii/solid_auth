@@ -67,11 +67,7 @@ abstract class SolidOidcManagerFactory {
   ///
   /// [metadata] is optional — pass it if you have already fetched the
   /// discovery document to avoid an extra network round-trip.
-  static Future<
-      ({
-        OidcUserManager manager,
-        DpopKeyManager keyManager,
-      })> create({
+  static Future<({OidcUserManager manager, DpopKeyManager keyManager})> create({
     required String issuerUri,
     required SolidOidcConfig config,
     SolidProviderMetadata? metadata,
@@ -125,16 +121,26 @@ abstract class SolidOidcManagerFactory {
     // dpopTokenHook.
     hooks.token = OidcHookGroup(
       hooks: [if (hooks.token != null) hooks.token!, dpopTokenHook],
-      executionHook: (hooks.token is OidcExecutionHookMixin<
-              OidcTokenHookRequest, OidcTokenResponse>)
+      executionHook:
+          (hooks.token
+              is OidcExecutionHookMixin<
+                OidcTokenHookRequest,
+                OidcTokenResponse
+              >)
           ? hooks.token
-              as OidcExecutionHookMixin<OidcTokenHookRequest, OidcTokenResponse>
+                as OidcExecutionHookMixin<
+                  OidcTokenHookRequest,
+                  OidcTokenResponse
+                >
           : dpopTokenHook,
     );
 
     // Wire the hook into OidcUserManagerSettings.
     final settings = OidcUserManagerSettings(
-      strictJwtVerification: config.strictJwtVerification,
+      // config.strictJwtVerification is intentionally not forwarded: oidc_core
+      // 1.0+ removed the corresponding fail-open opt-out entirely, so ID token
+      // signature verification is now unconditionally strict. See
+      // [SolidOidcConfig.strictJwtVerification] for the retained legacy field.
       scope: scopes,
       frontChannelLogoutUri: config.frontChannelLogoutUri,
       redirectUri: config.redirectUri,
@@ -160,6 +166,13 @@ abstract class SolidOidcManagerFactory {
       getIdToken: config.getIdToken,
       supportOfflineAuth: config.supportOfflineAuth,
       userInfoSettings: config.userInfoSettings,
+      // oidc_core 2.0+ defaults init() to OidcInitMode.cacheFirst, which
+      // returns a possibly-stale cached token immediately and refreshes in
+      // the background (a second, later userChanges emission). solid_auth's
+      // tryRestoreSession() reads currentAuthData synchronously right after
+      // init() resolves, so it needs the pre-2.0 guarantee that init() has
+      // already refreshed an expired token by the time it returns.
+      initMode: OidcInitMode.blockingValidate,
     );
 
     final clientAuth = config.clientSecret != null
@@ -193,10 +206,7 @@ abstract class SolidOidcManagerFactory {
           );
 
     // Return OIDC manager and custom key manager
-    return (
-      manager: manager,
-      keyManager: keyManager,
-    );
+    return (manager: manager, keyManager: keyManager);
   }
 
   // Check if the current scope contains webid.
