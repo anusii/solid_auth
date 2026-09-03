@@ -5,8 +5,8 @@ homepage: https://github.com/anusii/solid_auth
 repository: https://github.com/anusii/solid_auth
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.10.0'
+  sdk: '>=3.11.0 <4.0.0'
+  flutter: '>=3.41.0'
 
 dependencies:
 
@@ -14,9 +14,9 @@ dependencies:
   crypto: ^3.0.7
 
   # Core OIDC package (OpenID certified) replacing the forked openid_client
-  oidc: ^0.14.0
-  oidc_core: ^0.16.0
-  oidc_default_store: ^0.6.0
+  oidc: ^4.0.0
+  oidc_core: ^3.0.0
+  oidc_default_store: ^1.0.0
 
   # JWT handling — kept for DPoP proof generation
   dart_jsonwebtoken: ^3.2.0
