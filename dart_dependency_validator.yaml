@@ -1,2 +1,12 @@
 ignore:
   - cupertino_icons  # An asset repository.
+
+# 20260904 gjw The ignore/ directory might hold archived copies of the
+# pre-OIDC implementation. It is gitignored and is never built, but
+# dependency_validator scans every Dart file under the package root
+# and would otherwise report that archive's old imports as
+# dev_dependencies we have to keep. Excluding it lets the check
+# reflect the live code only.
+
+exclude:
+  - "ignore/**"

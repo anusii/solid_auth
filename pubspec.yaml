@@ -34,16 +34,14 @@ dependencies:
 dev_dependencies:
   flutter:
     sdk: flutter
-  flutter_test:
-    sdk: flutter
-  clock: any
   flutter_lints: ^6.0.0
-  jose: any
-  mocktail: ^1.0.0
-  openidconnect_web: any
-  pointycastle: ^4.0.0
   url_launcher: any
-  web: any
+  # 20260904 gjw The example is declared here so the dependency
+  # checker sees the packages that only example/ imports (such as
+  # url_launcher) as used.  Keep the name in step with
+  # example/pubspec.yaml.
+  solidautheg:
+    path: example
 
 # Running platforms
 platforms:
