@@ -1,12 +1,18 @@
+# Configuration for the dependency_validator package, run by `make depend`.
+#
+# This file is shared across projects as a hard link, maintained by
+# support/update.sh, so keep the contents generic. A project needing its
+# own ignores or excludes will show up as a difference on the next
+# update.sh run, to be reconciled through meld.
+
 ignore:
   - cupertino_icons  # An asset repository.
 
-# 20260904 gjw The ignore/ directory might hold archived copies of the
-# pre-OIDC implementation. It is gitignored and is never built, but
-# dependency_validator scans every Dart file under the package root
-# and would otherwise report that archive's old imports as
-# dev_dependencies we have to keep. Excluding it lets the check
-# reflect the live code only.
+# 20260904 gjw An ignore/ directory holds local archived or scratch code.
+# It is gitignored and is never built, but dependency_validator scans
+# every Dart file under the package root and would otherwise report that
+# old code's imports as dev_dependencies we have to keep. Excluding it
+# lets the check reflect the live code only.
 
 exclude:
   - "ignore/**"
