@@ -11,6 +11,7 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
++ Store the tokens and DPoP key in the platform keystore [1.0.8 20260911 gjw]
 + Review and cleanup solidautheg [1.0.7 20260904 gjw]
 + Migrate oidc from 0->4 [1.0.6 20260904 anuskavidanage]
 + Streamline login logout [1.0.5 20260828 anushkavidanage]

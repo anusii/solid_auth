@@ -32,6 +32,7 @@ import 'package:oidc/oidc.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
 
 import 'package:solid_auth/src/auth/solid_oidc_config.dart';
+import 'package:solid_auth/src/auth/solid_token_store.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/dpop/dpop_token_generator.dart';
 import 'package:solid_auth/src/models/solid_provider_metadata.dart';
@@ -47,7 +48,7 @@ final _log = Logger('solid_auth.SolidOidcManagerFactory');
 /// - Solid-specific discovery document wrapping.
 /// - Correct scope defaults (`webid` always included).
 /// - DPoP-ready token hooks (wired in separately via [SolidDpopHook]).
-/// - Platform-appropriate storage via [OidcDefaultStore].
+/// - Keystore-backed token storage via [OidcDefaultStore].
 ///
 /// Example:
 /// ```dart
@@ -187,7 +188,7 @@ abstract class SolidOidcManagerFactory {
         ? OidcUserManager(
             discoveryDocument: metadata.oidcMetadata,
             clientCredentials: clientAuth,
-            store: OidcDefaultStore(),
+            store: createSolidTokenStore(),
             settings: settings,
             httpClient: config.httpClient,
             keyStore: null,
@@ -198,7 +199,7 @@ abstract class SolidOidcManagerFactory {
               Uri.parse(issuerUri),
             ),
             clientCredentials: clientAuth,
-            store: OidcDefaultStore(),
+            store: createSolidTokenStore(),
             settings: settings,
             httpClient: config.httpClient,
             keyStore: null,
