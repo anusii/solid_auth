@@ -33,6 +33,8 @@ import 'package:logging/logging.dart';
 import 'package:oidc_core/oidc_core.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
 
+import 'package:solid_auth/src/auth/solid_token_store.dart';
+
 final _log = Logger('solid_auth.SolidAuthSessionStore');
 
 /// Holds the Solid-specific parameters needed to restore a previous
@@ -77,15 +79,17 @@ class SolidAuthSessionData {
 /// | `solid_auth_rsa_public` | PEM-encoded RSA public key |
 ///
 /// The OIDC access/refresh tokens themselves are stored by `package:oidc`
-/// automatically in the same underlying secure storage — this class only
-/// tracks the Solid-specific extras needed to reconstruct the manager.
+/// in the same namespace of the same store — this class only tracks the
+/// Solid-specific extras needed to reconstruct the manager. Note that the
+/// private key above is a credential: the store must be the keystore-backed
+/// one from [createSolidTokenStore], never a bare [OidcDefaultStore].
 class SolidAuthSessionStore {
   static const _issuerUriKey = 'solid_auth_issuer_uri';
   static const _scopesKey = 'solid_auth_scopes';
   static const _privateKeyKey = 'solid_auth_rsa_private';
   static const _publicKeyKey = 'solid_auth_rsa_public';
 
-  final _store = OidcDefaultStore();
+  final _store = createSolidTokenStore();
 
   /// Persists all parameters required to restore this session later.
   ///
