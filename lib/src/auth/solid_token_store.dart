@@ -111,8 +111,10 @@ class _LoggingStore extends OidcDefaultStore {
     String? managerId,
   }) async {
     // ignore: avoid_print
-    print('STORE set ${namespace.name} keys=${values.keys.toList()} '
-        'values=${namespace == OidcStoreNamespace.state ? values : '<hidden>'}');
+    print(
+      'STORE set ${namespace.name} keys=${values.keys.toList()} '
+      'values=${namespace == OidcStoreNamespace.state ? values : '<hidden>'}',
+    );
     return super.setMany(namespace, values: values, managerId: managerId);
   }
 
@@ -122,10 +124,16 @@ class _LoggingStore extends OidcDefaultStore {
     required Set<String> keys,
     String? managerId,
   }) async {
-    final res = await super.getMany(namespace, keys: keys, managerId: managerId);
+    final res = await super.getMany(
+      namespace,
+      keys: keys,
+      managerId: managerId,
+    );
     // ignore: avoid_print
-    print('STORE get ${namespace.name} keys=$keys -> found=${res.keys.toList()}'
-        '${namespace == OidcStoreNamespace.state ? ' values=$res' : ''}');
+    print(
+      'STORE get ${namespace.name} keys=$keys -> found=${res.keys.toList()}'
+      '${namespace == OidcStoreNamespace.state ? ' values=$res' : ''}',
+    );
     return res;
   }
 
