@@ -116,6 +116,51 @@ abstract class SolidOidcManagerFactory {
 
         return Future.value(hookRequest);
       },
+      // Report what the token endpoint actually said.
+      //
+      // OidcUserManagerBase.tryGetAuthResponse() runs the code exchange
+      // INSIDE the try block that guards the authorization response, and its
+      // catch applies the RFC 9207 mix-up defence to any OidcException that
+      // carries an errorResponse. A token-endpoint error body carries one —
+      // and never carries `iss`, which is an authorization-response
+      // parameter — so a plain `invalid_grant` comes back to the caller as
+      //
+      //   The authorization server advertises
+      //   `authorization_response_iss_parameter_supported` but the
+      //   authorization error response is missing the `iss` parameter
+      //   (RFC 9207 §2.4); refusing as a possible mix-up attack.
+      //
+      // which names neither the endpoint that failed nor the reason. Rethrow
+      // the code-exchange failure without an errorResponse so that catch
+      // rethrows it untouched, with the server's own error in the message.
+      //
+      // Only the authorization_code grant is unwrapped. refresh_token errors
+      // are left exactly as they are, because oidc_core reads their
+      // errorResponse to decide whether a refresh failure means re-login.
+      modifyExecution: (hookRequest, defaultExecution) async {
+        try {
+          return await defaultExecution(hookRequest);
+        } on OidcException catch (e, st) {
+          final errorResponse = e.errorResponse;
+          if (errorResponse == null ||
+              hookRequest.request.grantType !=
+                  OidcConstants_GrantType.authorizationCode) {
+            rethrow;
+          }
+          final description = errorResponse.errorDescription;
+          final detail = description == null ? '' : ': $description';
+          _log.severe(
+            'Token endpoint rejected the code exchange: '
+            '${errorResponse.error}$detail',
+          );
+          throw OidcException(
+            'The code exchange at ${hookRequest.tokenEndpoint} failed: '
+            '${errorResponse.error}$detail',
+            internalException: e,
+            internalStackTrace: st,
+          );
+        }
+      },
     );
 
     // Create OIDC hook group and combine any existing hooks with the created
