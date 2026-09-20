@@ -99,9 +99,18 @@ abstract class SolidOidcManagerFactory {
       modifyRequest: (hookRequest) async {
         final tokenEndpointUrl = hookRequest.tokenEndpoint.toString();
 
+        // 20260920 gjw Whether a code_verifier is attached is logged, never
+        // the verifier itself. An authorization_code exchange that reaches
+        // the server without one is answered with invalid_grant, and that
+        // is exactly how a secure store which quietly fails to persist
+        // presents itself, so the presence of the value is the thing worth
+        // knowing when a login fails.
+
         _log.fine(
           'DPoP hook: generating proof for token endpoint: $tokenEndpointUrl '
-          '(grant_type=${hookRequest.request.grantType})',
+          '(grant_type=${hookRequest.request.grantType}, '
+          'code_verifier=${hookRequest.request.codeVerifier == null ? 'MISSING' : 'present'}, '
+          'redirect_uri=${hookRequest.request.redirectUri})',
         );
 
         final dpopProof = await DpopTokenGenerator.generateForTokenEndpoint(
@@ -115,6 +124,32 @@ abstract class SolidOidcManagerFactory {
         hookRequest.headers!['DPoP'] = dpopProof;
 
         return Future.value(hookRequest);
+      },
+
+      // 20260920 gjw Report what the token endpoint actually objected to.
+      // OidcUserManagerBase wraps any failure here in its RFC 9207 "the
+      // authorization error response is missing the `iss` parameter" message
+      // and discards the original. An error from the TOKEN endpoint never
+      // carries `iss`, so every token failure — invalid_grant, an
+      // unacceptable DPoP proof, a rejected client — reaches the app looking
+      // like a mix-up attack. This hook runs first, while the server's own
+      // error code is still attached, which is the difference between a
+      // diagnosable failure and a guess.
+      modifyExecution: (hookRequest, defaultExecution) async {
+        try {
+          return await defaultExecution(hookRequest);
+        } on OidcException catch (e) {
+          final response = e.errorResponse;
+
+          _log.severe(
+            'Token endpoint rejected the request: '
+            'error=${response?.error ?? '(none)'} '
+            'description=${response?.errorDescription ?? '(none)'} '
+            'message=${e.message}',
+          );
+
+          rethrow;
+        }
       },
     );
 
