@@ -36,6 +36,7 @@ import 'package:solid_auth/src/auth/solid_token_store.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/dpop/dpop_token_generator.dart';
 import 'package:solid_auth/src/models/solid_provider_metadata.dart';
+import 'package:solid_auth/src/utils/server_clock.dart';
 import 'package:solid_auth/src/utils/solid_scopes.dart';
 
 final _log = Logger('solid_auth.SolidOidcManagerFactory');
@@ -75,6 +76,14 @@ abstract class SolidOidcManagerFactory {
   }) async {
     _log.fine('Creating OidcUserManager for issuer: $issuerUri');
 
+    // 20260920 gjw Learn the server's clock before any proof is signed. A
+    // DPoP proof whose iat has drifted outside the server's tolerance is
+    // refused, which stops login outright, so the device clock is not
+    // trusted. Best effort and rate limited inside [ServerClock]: a failure
+    // here leaves the device clock in use, exactly as before.
+
+    await ServerClock.syncWith(Uri.parse(issuerUri));
+
     // Ensure webid scope is always present (Solid-OIDC requirement).
     final scopes = _ensureWebIdScope(config.scopes);
 
@@ -99,9 +108,18 @@ abstract class SolidOidcManagerFactory {
       modifyRequest: (hookRequest) async {
         final tokenEndpointUrl = hookRequest.tokenEndpoint.toString();
 
+        // 20260920 gjw Whether a code_verifier is attached is logged, never
+        // the verifier itself. An authorization_code exchange that reaches
+        // the server without one is answered with invalid_grant, and that
+        // is exactly how a secure store which quietly fails to persist
+        // presents itself, so the presence of the value is the thing worth
+        // knowing when a login fails.
+
         _log.fine(
           'DPoP hook: generating proof for token endpoint: $tokenEndpointUrl '
-          '(grant_type=${hookRequest.request.grantType})',
+          '(grant_type=${hookRequest.request.grantType}, '
+          'code_verifier=${hookRequest.request.codeVerifier == null ? 'MISSING' : 'present'}, '
+          'redirect_uri=${hookRequest.request.redirectUri})',
         );
 
         final dpopProof = await DpopTokenGenerator.generateForTokenEndpoint(
