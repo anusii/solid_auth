@@ -36,6 +36,7 @@ import 'package:solid_auth/src/auth/solid_token_store.dart';
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
 import 'package:solid_auth/src/dpop/dpop_token_generator.dart';
 import 'package:solid_auth/src/models/solid_provider_metadata.dart';
+import 'package:solid_auth/src/utils/server_clock.dart';
 import 'package:solid_auth/src/utils/solid_scopes.dart';
 
 final _log = Logger('solid_auth.SolidOidcManagerFactory');
@@ -74,6 +75,14 @@ abstract class SolidOidcManagerFactory {
     SolidProviderMetadata? metadata,
   }) async {
     _log.fine('Creating OidcUserManager for issuer: $issuerUri');
+
+    // 20260920 gjw Learn the server's clock before any proof is signed. A
+    // DPoP proof whose iat has drifted outside the server's tolerance is
+    // refused, which stops login outright, so the device clock is not
+    // trusted. Best effort and rate limited inside [ServerClock]: a failure
+    // here leaves the device clock in use, exactly as before.
+
+    await ServerClock.syncWith(Uri.parse(issuerUri));
 
     // Ensure webid scope is always present (Solid-OIDC requirement).
     final scopes = _ensureWebIdScope(config.scopes);
@@ -145,7 +154,8 @@ abstract class SolidOidcManagerFactory {
             'Token endpoint rejected the request: '
             'error=${response?.error ?? '(none)'} '
             'description=${response?.errorDescription ?? '(none)'} '
-            'message=${e.message}',
+            'message=${e.message} '
+            'clock_offset=${ServerClock.offset.inSeconds}s',
           );
 
           rethrow;

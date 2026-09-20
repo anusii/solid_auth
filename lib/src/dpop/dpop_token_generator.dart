@@ -36,6 +36,7 @@ import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
+import 'package:solid_auth/src/utils/server_clock.dart';
 
 final _log = Logger('solid_auth.DpopTokenGenerator');
 const _uuid = Uuid();
@@ -169,7 +170,14 @@ abstract class DpopTokenGenerator {
       'htu': htu,
       'htm': httpMethod.toUpperCase(),
       'jti': tokenId,
-      'iat': (DateTime.now().millisecondsSinceEpoch / 1000).round(),
+      // 20260920 gjw Signed with the server's clock rather than this
+      // device's. The server rejects a proof whose iat sits outside a
+      // tolerance of tens of seconds around its own time, so a drifting
+      // device clock otherwise makes login impossible. [ServerClock] falls
+      // back to the device clock until a sync succeeds, which is the
+      // behaviour this line had before.
+
+      'iat': (ServerClock.now.millisecondsSinceEpoch / 1000).round(),
     };
 
     // `ath` claim: base64url(sha256(ascii(access_token)))
