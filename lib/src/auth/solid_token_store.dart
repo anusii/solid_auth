@@ -45,16 +45,36 @@ import 'package:oidc_default_store/oidc_default_store.dart';
 /// impersonation. Ordinary home-directory backups collect the file
 /// (RFC 9700 §4.14).
 ///
-/// The per-platform options are [OidcDefaultStore]'s own hardened
-/// recommendations: an Android-Keystore-backed key on Android, and
-/// first-unlock-this-device keychain items (never iCloud-synced) on iOS and
-/// macOS. Note that macOS additionally requires the Keychain Sharing
-/// entitlement for `flutter_secure_storage` to function at all.
+/// Android and iOS take [OidcDefaultStore]'s own hardened recommendations: an
+/// Android-Keystore-backed key on Android, and first-unlock-this-device
+/// keychain items (never iCloud-synced) on iOS.
+///
+/// 20260920 gjw macOS departs from the recommendation, turning OFF the data
+/// protection keychain. That keychain requires the app to hold a keychain
+/// access group, which comes from the `keychain-access-groups` entitlement or
+/// from the `com.apple.application-identifier` an embedded provisioning
+/// profile supplies. An app distributed with Developer ID has neither, so
+/// every write failed: todopod 1.0.46 logged "tried writing secure tokens
+/// using package:flutter_secure_storage, but it failed" and fell back to
+/// shared_preferences, while READS returned errSecItemNotFound, which the
+/// plugin reports as a plain null rather than an error. Nothing then caught a
+/// failure to fall back on, so the PKCE `code_verifier` written before the
+/// browser flow read back as null, the code exchange went out without it, and
+/// the server answered invalid_grant — surfacing as an RFC 9207 mix-up
+/// warning. The legacy file-based keychain needs no entitlement and works for
+/// a signed, unsandboxed app. The cost is that `kSecAttrAccessible` is ignored
+/// there, so items follow the login keychain rather than being pinned to
+/// first-unlock-this-device. An App Store build is sandboxed and ships a
+/// provisioning profile, so it can use the data protection keychain: give it
+/// its own options rather than reusing these.
 
 OidcDefaultStore createSolidTokenStore() => OidcDefaultStore(
   secureStorageInstance: const FlutterSecureStorage(
     aOptions: OidcDefaultStore.recommendedAndroidOptions,
     iOptions: OidcDefaultStore.recommendedIOSOptions,
-    mOptions: OidcDefaultStore.recommendedMacOsOptions,
+    mOptions: MacOsOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+      usesDataProtectionKeychain: false,
+    ),
   ),
 );

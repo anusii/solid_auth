@@ -11,6 +11,7 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
++ Keychain works for a macOS Developer ID build [1.0.10 20260920 gjw]
 + Updated dependencies [1.0.9 20260914 gjw]
 + Store the tokens and DPoP key in the platform keystore [1.0.8 20260911 gjw]
 + Review and cleanup solidautheg [1.0.7 20260904 gjw]
