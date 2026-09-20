@@ -134,31 +134,49 @@ abstract class SolidOidcManagerFactory {
 
         return Future.value(hookRequest);
       },
-
-      // 20260920 gjw Report what the token endpoint actually objected to.
-      // OidcUserManagerBase wraps any failure here in its RFC 9207 "the
-      // authorization error response is missing the `iss` parameter" message
-      // and discards the original. An error from the TOKEN endpoint never
-      // carries `iss`, so every token failure — invalid_grant, an
-      // unacceptable DPoP proof, a rejected client — reaches the app looking
-      // like a mix-up attack. This hook runs first, while the server's own
-      // error code is still attached, which is the difference between a
-      // diagnosable failure and a guess.
+      // Report what the token endpoint actually said.
+      //
+      // OidcUserManagerBase.tryGetAuthResponse() runs the code exchange
+      // INSIDE the try block that guards the authorization response, and its
+      // catch applies the RFC 9207 mix-up defence to any OidcException that
+      // carries an errorResponse. A token-endpoint error body carries one —
+      // and never carries `iss`, which is an authorization-response
+      // parameter — so a plain `invalid_grant` comes back to the caller as
+      //
+      //   The authorization server advertises
+      //   `authorization_response_iss_parameter_supported` but the
+      //   authorization error response is missing the `iss` parameter
+      //   (RFC 9207 §2.4); refusing as a possible mix-up attack.
+      //
+      // which names neither the endpoint that failed nor the reason. Rethrow
+      // the code-exchange failure without an errorResponse so that catch
+      // rethrows it untouched, with the server's own error in the message.
+      //
+      // Only the authorization_code grant is unwrapped. refresh_token errors
+      // are left exactly as they are, because oidc_core reads their
+      // errorResponse to decide whether a refresh failure means re-login.
       modifyExecution: (hookRequest, defaultExecution) async {
         try {
           return await defaultExecution(hookRequest);
-        } on OidcException catch (e) {
-          final response = e.errorResponse;
-
+        } on OidcException catch (e, st) {
+          final errorResponse = e.errorResponse;
+          if (errorResponse == null ||
+              hookRequest.request.grantType !=
+                  OidcConstants_GrantType.authorizationCode) {
+            rethrow;
+          }
+          final description = errorResponse.errorDescription;
+          final detail = description == null ? '' : ': $description';
           _log.severe(
-            'Token endpoint rejected the request: '
-            'error=${response?.error ?? '(none)'} '
-            'description=${response?.errorDescription ?? '(none)'} '
-            'message=${e.message} '
-            'clock_offset=${ServerClock.offset.inSeconds}s',
+            'Token endpoint rejected the code exchange: '
+            '${errorResponse.error}$detail',
           );
-
-          rethrow;
+          throw OidcException(
+            'The code exchange at ${hookRequest.tokenEndpoint} failed: '
+            '${errorResponse.error}$detail',
+            internalException: e,
+            internalStackTrace: st,
+          );
         }
       },
     );

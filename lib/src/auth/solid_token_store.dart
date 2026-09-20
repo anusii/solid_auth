@@ -28,6 +28,7 @@
 library;
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:oidc_core/oidc_core.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
 
 /// Builds the store used for everything solid_auth persists between runs.
@@ -45,36 +46,105 @@ import 'package:oidc_default_store/oidc_default_store.dart';
 /// impersonation. Ordinary home-directory backups collect the file
 /// (RFC 9700 §4.14).
 ///
-/// Android and iOS take [OidcDefaultStore]'s own hardened recommendations: an
-/// Android-Keystore-backed key on Android, and first-unlock-this-device
-/// keychain items (never iCloud-synced) on iOS.
+/// The per-platform options are [OidcDefaultStore]'s own hardened
+/// recommendations on Android and iOS: an Android-Keystore-backed key, and
+/// first-unlock-this-device keychain items (never iCloud-synced).
 ///
-/// 20260920 gjw macOS departs from the recommendation, turning OFF the data
-/// protection keychain. That keychain requires the app to hold a keychain
-/// access group, which comes from the `keychain-access-groups` entitlement or
-/// from the `com.apple.application-identifier` an embedded provisioning
-/// profile supplies. An app distributed with Developer ID has neither, so
-/// every write failed: todopod 1.0.46 logged "tried writing secure tokens
-/// using package:flutter_secure_storage, but it failed" and fell back to
-/// shared_preferences, while READS returned errSecItemNotFound, which the
-/// plugin reports as a plain null rather than an error. Nothing then caught a
-/// failure to fall back on, so the PKCE `code_verifier` written before the
-/// browser flow read back as null, the code exchange went out without it, and
-/// the server answered invalid_grant — surfacing as an RFC 9207 mix-up
-/// warning. The legacy file-based keychain needs no entitlement and works for
-/// a signed, unsandboxed app. The cost is that `kSecAttrAccessible` is ignored
-/// there, so items follow the login keychain rather than being pinned to
-/// first-unlock-this-device. An App Store build is sandboxed and ships a
-/// provisioning profile, so it can use the data protection keychain: give it
-/// its own options rather than reusing these.
+/// macOS takes those same recommendations with one change:
+/// `usesDataProtectionKeychain` is turned OFF. `flutter_secure_storage`
+/// defaults it on, and the macOS data protection keychain is reachable only by
+/// a process that carries a keychain access group — either declared as the
+/// restricted `keychain-access-groups` entitlement, or defaulted from the
+/// `com.apple.application-identifier` that an embedded provisioning profile
+/// supplies. Developer ID distribution embeds no profile, so a notarized app
+/// has neither, and the OS then answers asymmetrically:
+///
+/// - `SecItemAdd` fails with `errSecMissingEntitlement` (-34018). The plugin
+///   turns that into a `PlatformException`, [OidcDefaultStore] catches it and
+///   silently falls back to `package:shared_preferences` — so the secret is
+///   written, in the clear, to the app's plist.
+/// - `SecItemCopyMatching` returns `errSecItemNotFound` (-25300), which is not
+///   an error at all. The plugin returns null, [OidcDefaultStore] reads that as
+///   "never stored" and does NOT fall back — so the value just written is
+///   invisible.
+///
+/// Every secret in this namespace is therefore both leaked to disk and lost on
+/// read. For `package:oidc` 4.x that includes the PKCE `code_verifier` (stored
+/// under `code_verifier.<state id>`), so the code exchange goes out without
+/// one and the OP rejects it with `invalid_grant - PKCE verification failed`:
+/// login is impossible in a notarized build.
+///
+/// Turning the flag off moves macOS to the file-based (login) keychain, which
+/// needs no entitlement, works whether or not the app is sandboxed, and is
+/// where a Developer ID app's secrets belong. `accessibility` is a data
+/// protection attribute and is simply ignored there.
+///
+/// 20260920 tonypioneer Diagnosed against the notarized todopod 1.0.46 DMG.
 
-OidcDefaultStore createSolidTokenStore() => OidcDefaultStore(
+OidcDefaultStore createSolidTokenStore() => _LoggingStore(
   secureStorageInstance: const FlutterSecureStorage(
     aOptions: OidcDefaultStore.recommendedAndroidOptions,
     iOptions: OidcDefaultStore.recommendedIOSOptions,
-    mOptions: MacOsOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-      usesDataProtectionKeychain: false,
-    ),
+    mOptions: macOsKeychainOptions,
   ),
 );
+
+/// The macOS keychain options used for everything solid_auth persists.
+///
+/// [OidcDefaultStore.recommendedMacOsOptions] with the data protection
+/// keychain turned off — see [createSolidTokenStore] for why that flag cannot
+/// be left on in a Developer ID build.
+
+const MacOsOptions macOsKeychainOptions = MacOsOptions(
+  accessibility: KeychainAccessibility.first_unlock_this_device,
+  usesDataProtectionKeychain: false,
+);
+
+// TEMP DIAGNOSTIC - remove.
+class _LoggingStore extends OidcDefaultStore {
+  _LoggingStore({super.secureStorageInstance});
+
+  @override
+  Future<void> setMany(
+    OidcStoreNamespace namespace, {
+    required Map<String, String> values,
+    String? managerId,
+  }) async {
+    // ignore: avoid_print
+    print(
+      'STORE set ${namespace.name} keys=${values.keys.toList()} '
+      'values=${namespace == OidcStoreNamespace.state ? values : '<hidden>'}',
+    );
+    return super.setMany(namespace, values: values, managerId: managerId);
+  }
+
+  @override
+  Future<Map<String, String>> getMany(
+    OidcStoreNamespace namespace, {
+    required Set<String> keys,
+    String? managerId,
+  }) async {
+    final res = await super.getMany(
+      namespace,
+      keys: keys,
+      managerId: managerId,
+    );
+    // ignore: avoid_print
+    print(
+      'STORE get ${namespace.name} keys=$keys -> found=${res.keys.toList()}'
+      '${namespace == OidcStoreNamespace.state ? ' values=$res' : ''}',
+    );
+    return res;
+  }
+
+  @override
+  Future<void> removeMany(
+    OidcStoreNamespace namespace, {
+    required Set<String> keys,
+    String? managerId,
+  }) async {
+    // ignore: avoid_print
+    print('STORE remove ${namespace.name} keys=$keys');
+    return super.removeMany(namespace, keys: keys, managerId: managerId);
+  }
+}
