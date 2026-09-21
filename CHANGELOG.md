@@ -11,6 +11,7 @@ utilised by the flutter version_widget package.
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
++ Remove the temporary store logging diagnostic [1.0.11 20260921 gjw]
 + DPoP use server clock (not device), keychain for macOS [1.0.10 20260920 gjw/tony]
 + Updated dependencies [1.0.9 20260914 gjw]
 + Store the tokens and DPoP key in the platform keystore [1.0.8 20260911 gjw]

@@ -28,7 +28,6 @@
 library;
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:oidc_core/oidc_core.dart';
 import 'package:oidc_default_store/oidc_default_store.dart';
 
 /// Builds the store used for everything solid_auth persists between runs.
@@ -81,7 +80,7 @@ import 'package:oidc_default_store/oidc_default_store.dart';
 ///
 /// 20260920 tonypioneer Diagnosed against the notarized todopod 1.0.46 DMG.
 
-OidcDefaultStore createSolidTokenStore() => _LoggingStore(
+OidcDefaultStore createSolidTokenStore() => OidcDefaultStore(
   secureStorageInstance: const FlutterSecureStorage(
     aOptions: OidcDefaultStore.recommendedAndroidOptions,
     iOptions: OidcDefaultStore.recommendedIOSOptions,
@@ -99,52 +98,3 @@ const MacOsOptions macOsKeychainOptions = MacOsOptions(
   accessibility: KeychainAccessibility.first_unlock_this_device,
   usesDataProtectionKeychain: false,
 );
-
-// TEMP DIAGNOSTIC - remove.
-class _LoggingStore extends OidcDefaultStore {
-  _LoggingStore({super.secureStorageInstance});
-
-  @override
-  Future<void> setMany(
-    OidcStoreNamespace namespace, {
-    required Map<String, String> values,
-    String? managerId,
-  }) async {
-    // ignore: avoid_print
-    print(
-      'STORE set ${namespace.name} keys=${values.keys.toList()} '
-      'values=${namespace == OidcStoreNamespace.state ? values : '<hidden>'}',
-    );
-    return super.setMany(namespace, values: values, managerId: managerId);
-  }
-
-  @override
-  Future<Map<String, String>> getMany(
-    OidcStoreNamespace namespace, {
-    required Set<String> keys,
-    String? managerId,
-  }) async {
-    final res = await super.getMany(
-      namespace,
-      keys: keys,
-      managerId: managerId,
-    );
-    // ignore: avoid_print
-    print(
-      'STORE get ${namespace.name} keys=$keys -> found=${res.keys.toList()}'
-      '${namespace == OidcStoreNamespace.state ? ' values=$res' : ''}',
-    );
-    return res;
-  }
-
-  @override
-  Future<void> removeMany(
-    OidcStoreNamespace namespace, {
-    required Set<String> keys,
-    String? managerId,
-  }) async {
-    // ignore: avoid_print
-    print('STORE remove ${namespace.name} keys=$keys');
-    return super.removeMany(namespace, keys: keys, managerId: managerId);
-  }
-}
