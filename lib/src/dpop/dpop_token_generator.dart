@@ -30,12 +30,13 @@ library;
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:fast_rsa/fast_rsa.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:solid_auth/src/dpop/dpop_key_manager.dart';
+import 'package:solid_auth/src/dpop/dpop_signer.dart';
+import 'package:solid_auth/src/dpop/dpop_signer_common.dart';
 import 'package:solid_auth/src/utils/server_clock.dart';
 
 final _log = Logger('solid_auth.DpopTokenGenerator');
@@ -96,7 +97,7 @@ abstract class DpopTokenGenerator {
   }) async {
     final km = keyManager ?? await DpopKeyManager.getInstance();
     _log.fine('Generating DPoP token-endpoint proof for: $tokenEndpointUrl');
-    return generate(
+    return _generateAsync(
       httpMethod: 'POST',
       endpointUrl: tokenEndpointUrl,
       keyPair: km.keyPair,
@@ -118,7 +119,7 @@ abstract class DpopTokenGenerator {
   }) async {
     // final keyManager = await DpopKeyManager.getInstance();
     final km = keyManager ?? await DpopKeyManager.getInstance();
-    return generate(
+    return _generateAsync(
       endpointUrl: endpointUrl,
       keyPair: km.keyPair,
       publicKeyJwk: km.publicKeyJwk,
@@ -141,6 +142,10 @@ abstract class DpopTokenGenerator {
   /// - [httpMethod]  — the HTTP method (GET, POST, PUT, PATCH, DELETE, etc.).
   /// - [accessToken] — when provided, the `ath` claim (SHA-256 of the token)
   ///                   is added, binding the proof to the specific token.
+  ///
+  /// Signs synchronously in pure Dart, which on web takes about 250 ms per
+  /// proof; [generateForRequest] and [generateForTokenEndpoint] use the
+  /// platform's own crypto there instead. Both produce the same proof.
   static String generate({
     required String endpointUrl,
     required KeyPair keyPair,
@@ -148,14 +153,58 @@ abstract class DpopTokenGenerator {
     required String httpMethod,
     String? accessToken,
   }) {
+    final input = signingInput(
+      endpointUrl: endpointUrl,
+      publicKeyJwk: publicKeyJwk,
+      httpMethod: httpMethod,
+      accessToken: accessToken,
+    );
+    return '$input.${signRs256Sync(input, keyPair.privateKey)}';
+  }
+
+  /// [generate], signed with the platform's own crypto where it's faster
+  /// (Web Crypto on web; see `dpop_signer.dart`).
+  static Future<String> _generateAsync({
+    required String endpointUrl,
+    required KeyPair keyPair,
+    required Map<String, dynamic> publicKeyJwk,
+    required String httpMethod,
+    String? accessToken,
+  }) async {
+    final input = signingInput(
+      endpointUrl: endpointUrl,
+      publicKeyJwk: publicKeyJwk,
+      httpMethod: httpMethod,
+      accessToken: accessToken,
+    );
+    return '$input.${await signRs256(input, keyPair.privateKey)}';
+  }
+
+  /// The JWS signing input of a DPoP proof, `<header>.<payload>` each
+  /// base64url-encoded JSON: what [generate] signs.
+  ///
+  /// Built here rather than by dart_jsonwebtoken's `JWT.sign`, which
+  /// replaces `iat` with the device's clock: the proof must carry the
+  /// server's (see [ServerClock]).
+  ///
+  /// [jti] and [issuedAt] are for tests; a proof always gets a fresh
+  /// unique id and the server's current time.
+  static String signingInput({
+    required String endpointUrl,
+    required Map<String, dynamic> publicKeyJwk,
+    required String httpMethod,
+    String? accessToken,
+    String? jti,
+    DateTime? issuedAt,
+  }) {
     _log.fine('Generating DPoP proof: $httpMethod $endpointUrl');
 
-    final String tokenId = _uuid.v4(); // Unique token ID (replay protection)
+    final String tokenId = jti ?? _uuid.v4(); // Unique id (replay protection)
 
     /// Initialising token head and body (payload)
     /// https://solid.github.io/solid-oidc/primer/#authorization-code-pkce-flow
     /// https://datatracker.ietf.org/doc/html/rfc7519
-    var tokenHead = {'alg': 'RS256', 'typ': 'dpop+jwt', 'jwk': publicKeyJwk};
+    final tokenHead = {'alg': 'RS256', 'typ': 'dpop+jwt', 'jwk': publicKeyJwk};
 
     // RFC 9449 §4.2: htu MUST NOT include query or fragment components.
     final parsedUrl = Uri.parse(endpointUrl);
@@ -177,7 +226,8 @@ abstract class DpopTokenGenerator {
       // back to the device clock until a sync succeeds, which is the
       // behaviour this line had before.
 
-      'iat': (ServerClock.now.millisecondsSinceEpoch / 1000).round(),
+      'iat': ((issuedAt ?? ServerClock.now).millisecondsSinceEpoch / 1000)
+          .round(),
     };
 
     // `ath` claim: base64url(sha256(ascii(access_token)))
@@ -186,14 +236,9 @@ abstract class DpopTokenGenerator {
       payload['ath'] = _sha256Base64Url(accessToken);
     }
 
-    /// Create a json web token
-    final jwt = JWT(payload, header: tokenHead);
-
-    /// Sign the JWT using private key
-    return jwt.sign(
-      RSAPrivateKey(keyPair.privateKey),
-      algorithm: JWTAlgorithm.RS256,
-    );
+    String encode(Map<String, dynamic> json) =>
+        base64UrlUnpadded(utf8.encode(jsonEncode(json)));
+    return '${encode(tokenHead)}.${encode(payload)}';
   }
 
   // ── Internal ───────────────────────────────────────────────────────────────
