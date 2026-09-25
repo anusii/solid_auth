@@ -9,7 +9,7 @@ utilised by the flutter version_widget package.
 
 ## 1.1
 
-+ Sign DPoP proofs with Web Crypto on web, and with the server clock [1.1.0 20260925 jesscmoore]
++ Sign DPoP proofs with Web Crypto on web [1.1.0 20260925 jesscmoore]
 
 ## 1.0 Migrate to using OIDC OpenID certified
 
