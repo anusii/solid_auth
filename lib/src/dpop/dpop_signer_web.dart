@@ -79,6 +79,9 @@ Future<web.CryptoKey> _importKey(String privateKeyPem) {
       .toDart;
 }
 
+// Reached through dpop_signer.dart's conditional export, which the
+// unused-code check doesn't follow (it only sees the native branch).
+// ignore: unused-code
 /// The base64url (unpadded) RS256 signature of [signingInput].
 Future<String> signRs256(String signingInput, String privateKeyPem) async {
   final key = await (_keys[privateKeyPem] ??= _importKey(privateKeyPem));
