@@ -9,6 +9,8 @@ utilised by the flutter version_widget package.
 
 ## 1.1
 
++ Sign DPoP proofs with Web Crypto on web [1.1.0 20260925 jesscmoore]
+
 ## 1.0 Migrate to using OIDC OpenID certified
 
 + Remove the temporary store logging diagnostic [1.0.11 20260921 gjw]
