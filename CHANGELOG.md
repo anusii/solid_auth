@@ -7,7 +7,7 @@ description of the update. Updates in the 1.0.n series are heading
 toward a 1.1 release. The `[version timestamp user]` string is
 utilised by the flutter version_widget package.
 
-## 1.1
+## 1.1 Fine tuning
 
 + Sign DPoP proofs with Web Crypto on web [1.1.0 20260925 jesscmoore]
 
