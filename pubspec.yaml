@@ -56,7 +56,13 @@ flutter:
 
 # 20260930 gjw dev.pub conducts a search for potential leaks of secret
 # credentials, API keys, or crypto keys. The following is a false
-# positive.
+# positive used for testing the app. The key is not used to sign real
+# tokens for a real service, it's a fixture the test uses to check
+# that the pure-Dart RS256 signer and the new WebCrypto platform
+# signer (dpop_signer.dart) to produce byte-identical signatures, and
+# that DpopTokenGenerator builds a proof that verifies. This is a
+# standard, accepted pattern for RSA/JWT test fixtures (same thing
+# you'll see in jsonwebtoken, Node's own TLS tests, etc.).
 
 false_secrets:
   - test/dpop_token_generator_test.dart
