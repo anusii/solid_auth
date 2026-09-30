@@ -53,3 +53,10 @@ flutter:
     - packages/fast_rsa/web/assets/worker.js
     - packages/fast_rsa/web/assets/wasm_exec.js
     - packages/fast_rsa/web/assets/rsa.wasm
+
+# 20260930 gjw dev.pub conducts a search for potential leaks of secret
+# credentials, API keys, or crypto keys. The following is a false
+# positive.
+
+false_secrets:
+  - test/dpop_token_generator_test.dart
