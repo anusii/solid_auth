@@ -56,7 +56,7 @@ String _jwkInt(BigInt value) {
 final JSObject _algorithm =
     {'name': 'RSASSA-PKCS1-v1_5', 'hash': 'SHA-256'}.jsify()! as JSObject;
 
-Future<web.CryptoKey> _importKey(String privateKeyPem) {
+Future<web.CryptoKey> _importKey(String privateKeyPem, String publicExponent) {
   final key = parsedPrivateKey(privateKeyPem).key;
   final p = key.p!;
   final q = key.q!;
@@ -65,17 +65,16 @@ Future<web.CryptoKey> _importKey(String privateKeyPem) {
       {
             'kty': 'RSA',
             'n': _jwkInt(key.modulus!),
-            // 20261009 Miduo666 fast_rsa always uses the public exponent
-            // 65537, but [parsedPrivateKey] parses the PEM with
-            // dart_jsonwebtoken, which drops the real e. pointycastle then
-            // recovers key.publicExponent as d^-1 mod phi(n) — a valid but
-            // ~2048-bit exponent, not 65537. BoringSSL caps RSA public
-            // exponents at ~33 bits, so Chrome's importKey rejects such a JWK
-            // with DataError and web login fails on ~2/3 of freshly generated
-            // keys. Pin e to the real 65537 (AQAB) rather than the recovered
-            // value.
-
-            'e': _jwkInt(BigInt.from(65537)),
+            // 20261009 Miduo666 [parsedPrivateKey] parses the PEM with
+            // dart_jsonwebtoken, which drops the real public exponent, so
+            // pointycastle's key.publicExponent is a reconstructed d^-1 mod
+            // phi(n) — a valid but ~2048-bit value. BoringSSL caps RSA public
+            // exponents at ~33 bits, so Chrome's importKey rejected that JWK
+            // with DataError and web login failed on most freshly generated
+            // keys. Use [publicExponent], the real e from the key manager's
+            // public JWK (already base64url), which is also the e embedded in
+            // the DPoP proof header, so the two can never diverge.
+            'e': publicExponent,
             'd': _jwkInt(d),
             'p': _jwkInt(p),
             'q': _jwkInt(q),
@@ -93,8 +92,13 @@ Future<web.CryptoKey> _importKey(String privateKeyPem) {
 // unused-code check doesn't follow (it only sees the native branch).
 // ignore: unused-code
 /// The base64url (unpadded) RS256 signature of [signingInput].
-Future<String> signRs256(String signingInput, String privateKeyPem) async {
-  final key = await (_keys[privateKeyPem] ??= _importKey(privateKeyPem));
+Future<String> signRs256(
+  String signingInput,
+  String privateKeyPem,
+  String publicExponent,
+) async {
+  final key =
+      await (_keys[privateKeyPem] ??= _importKey(privateKeyPem, publicExponent));
   final signature = await web.window.crypto.subtle
       .sign(_algorithm, key, Uint8List.fromList(utf8.encode(signingInput)).toJS)
       .toDart;
