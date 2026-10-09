@@ -177,7 +177,7 @@ abstract class DpopTokenGenerator {
       httpMethod: httpMethod,
       accessToken: accessToken,
     );
-    return '$input.${await signRs256(input, keyPair.privateKey)}';
+    return '$input.${await signRs256(input, keyPair.privateKey, publicKeyJwk['e'] as String)}';
   }
 
   /// The JWS signing input of a DPoP proof, `<header>.<payload>` each

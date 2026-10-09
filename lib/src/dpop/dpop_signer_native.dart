@@ -31,5 +31,14 @@ library;
 import 'package:solid_auth/src/dpop/dpop_signer_common.dart';
 
 /// The base64url (unpadded) RS256 signature of [signingInput].
-Future<String> signRs256(String signingInput, String privateKeyPem) async =>
+///
+/// [publicExponent] is only needed by the web signer (it builds a JWK for
+/// Web Crypto); native signing is `m^d mod n` and never reads it, but the
+/// parameter is kept so both signers share one signature behind the
+/// conditional export in `dpop_signer.dart`.
+Future<String> signRs256(
+  String signingInput,
+  String privateKeyPem,
+  String publicExponent,
+) async =>
     signRs256Sync(signingInput, privateKeyPem);
