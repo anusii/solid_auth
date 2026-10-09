@@ -65,7 +65,17 @@ Future<web.CryptoKey> _importKey(String privateKeyPem) {
       {
             'kty': 'RSA',
             'n': _jwkInt(key.modulus!),
-            'e': _jwkInt(key.publicExponent!),
+            // 20261009 Miduo666 fast_rsa always uses the public exponent
+            // 65537, but [parsedPrivateKey] parses the PEM with
+            // dart_jsonwebtoken, which drops the real e. pointycastle then
+            // recovers key.publicExponent as d^-1 mod phi(n) — a valid but
+            // ~2048-bit exponent, not 65537. BoringSSL caps RSA public
+            // exponents at ~33 bits, so Chrome's importKey rejects such a JWK
+            // with DataError and web login fails on ~2/3 of freshly generated
+            // keys. Pin e to the real 65537 (AQAB) rather than the recovered
+            // value.
+
+            'e': _jwkInt(BigInt.from(65537)),
             'd': _jwkInt(d),
             'p': _jwkInt(p),
             'q': _jwkInt(q),
