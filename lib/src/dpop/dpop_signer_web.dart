@@ -97,8 +97,10 @@ Future<String> signRs256(
   String privateKeyPem,
   String publicExponent,
 ) async {
-  final key =
-      await (_keys[privateKeyPem] ??= _importKey(privateKeyPem, publicExponent));
+  final key = await (_keys[privateKeyPem] ??= _importKey(
+    privateKeyPem,
+    publicExponent,
+  ));
   final signature = await web.window.crypto.subtle
       .sign(_algorithm, key, Uint8List.fromList(utf8.encode(signingInput)).toJS)
       .toDart;

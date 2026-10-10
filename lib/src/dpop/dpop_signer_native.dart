@@ -40,5 +40,4 @@ Future<String> signRs256(
   String signingInput,
   String privateKeyPem,
   String publicExponent,
-) async =>
-    signRs256Sync(signingInput, privateKeyPem);
+) async => signRs256Sync(signingInput, privateKeyPem);
