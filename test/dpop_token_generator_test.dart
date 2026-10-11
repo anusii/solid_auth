@@ -145,9 +145,15 @@ void main() {
     );
 
     // RS256 is deterministic: same key and input, same signature.
-    expect(await signRs256(input, _pem), signRs256Sync(input, _pem));
+    expect(
+      await signRs256(input, _pem, _jwk['e'] as String),
+      signRs256Sync(input, _pem),
+    );
     // And again, from the cached key.
-    expect(await signRs256(input, _pem), signRs256Sync(input, _pem));
+    expect(
+      await signRs256(input, _pem, _jwk['e'] as String),
+      signRs256Sync(input, _pem),
+    );
   });
 }
 
