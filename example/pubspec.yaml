@@ -18,4 +18,3 @@ dependencies:
 flutter:
   assets:
     - assets/images/
-  uses-material-design: true
