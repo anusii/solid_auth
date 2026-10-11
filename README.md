@@ -34,7 +34,7 @@ discovery. This package is built on the OpenID-certified
 
 ```yaml
 dependencies:
-  solid_auth: ^1.1.0
+  solid_auth: ^1.1.1
 ```
 
 <!-- If your app targets **web**, also declare the `fast_rsa` WASM

@@ -661,11 +661,29 @@ BUILD_VER=$(shell grep '^version: ' pubspec.yaml | grep '+' | cut -d'+' -f2)
 MAJ_VER=$(shell grep '^version: ' pubspec.yaml | cut -d'+' -f1 | cut -d':' -f2 | cut -d'.' -f1,2)
 MIN_VER=$(shell grep '^version: ' pubspec.yaml | cut -d'+' -f1 | cut -d':' -f2 | cut -d'.' -f3)
 
+# 20260928 gjw The BUILD NUMBER — the `+N` — is incremented along with the
+# version now, and that matters to the app stores rather than to us.
+#
+# Google Play and App Store Connect both refuse an upload whose build number
+# they have seen before, and both take it from the `+N`. Carrying it across
+# unchanged, as this did, means the first upload of an app succeeds and every
+# one after it is rejected.
+#
+# A project with no `+N` at all keeps none: adding one would change what its
+# platforms see for no reason anyone asked for.
+#
+# Note the missing space in `version:$(MAJ_VER)` below is deliberate and must
+# stay. MAJ_VER comes from `cut -d':' -f2`, which leaves the leading space of
+# "version: 1.1.16" on the front of it, so the space is already there. Adding
+# another writes "version:  1.1.17", and since the next bump cuts on the
+# colon again the indent grows by one space per release.
+
 # Increment minor version in pubspec.yaml
 
 .PHONY: minor_versions
 minor_versions:
 	$(eval MIN_VER = $(shell echo $$(($(MIN_VER) + 1))))
+	$(eval BUILD_VER = $(if $(BUILD_VER),$(shell echo $$(($(BUILD_VER) + 1))),))
 	@echo "Bumping version: $(VER) to $(MAJ_VER).$(MIN_VER)$(if $(BUILD_VER),+$(BUILD_VER),)"
 	perl -pi -e 's|^version:.*|version:$(MAJ_VER).$(MIN_VER)$(if $(BUILD_VER),+$(BUILD_VER),)|' pubspec.yaml
 
@@ -674,6 +692,7 @@ minor_versions:
 .PHONY: major_versions
 major_versions:
 	$(eval MAJ_VER = $(shell echo "$(MAJ_VER) + 1.0"  | bc))
+	$(eval BUILD_VER = $(if $(BUILD_VER),$(shell echo $$(($(BUILD_VER) + 1))),))
 	@echo "Bumping version: $(VER) to $(MAJ_VER).$(MIN_VER)$(if $(BUILD_VER),+$(BUILD_VER),)"
 	perl -pi -e 's|^version:.*|version: $(MAJ_VER).$(MIN_VER)$(if $(BUILD_VER),+$(BUILD_VER),)|' pubspec.yaml
 
@@ -694,3 +713,14 @@ solidcommunity:
 icons:
 	cp assets/images/app_icon.png snap/gui/icon.png
 	dart run flutter_launcher_icons
+
+.PHONY: build_ios upload_ios
+
+
+build_ios:
+	git commit --allow-empty -m "chore: build ios"
+	git push origin HEAD
+
+upload_ios:
+	git commit --allow-empty -m "chore: upload ios"
+	git push origin HEAD

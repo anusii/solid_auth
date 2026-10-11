@@ -9,6 +9,7 @@ utilised by the flutter version_widget package.
 
 ## 1.1 Fine tuning
 
++ Web login use real RSA public exponent in DPoP [1.1.1 20261010 miduo]
 + Sign DPoP proofs with Web Crypto on web [1.1.0 20260925 jesscmoore]
 
 ## 1.0 Migrate to using OIDC OpenID certified
